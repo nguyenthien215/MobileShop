@@ -1,0 +1,21 @@
+### 🧾 6. Orders Module
+
+- [ ] Tạo migration `06_create_orders_table.js`.
+- [ ] Model `Order`:
+  - id (INT, PK)
+  - orderNumber (STRING, unique)
+  - userId (FK → users.id)
+  - totalAmount (FLOAT)
+  - status (ENUM)
+  - shippingAddress (JSON)
+  - paymentMethod (STRING)
+  - createdAt / updatedAt
+- [ ] Tạo migration `07_create_order_items_table.js`.
+- [ ] Model `OrderItem`:
+  - id (INT, PK)
+  - orderId (FK → orders.id)
+  - productId (FK → products.id)
+  - unitPrice (FLOAT)
+  - quantity (INT)
+  - total (FLOAT)
+  - createdAt / updatedAt

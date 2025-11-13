@@ -1,0 +1,23 @@
+{
+    "development": {
+        "username": "root",
+        "password": "nguyenthien22112005",
+        "database": "mobile_city",
+        "host": "127.0.0.1",
+        "dialect": "mysql"
+    },
+    "test": {
+        "username": "root",
+        "password": "nguyenthien22112005",
+        "database": "mobile_city_test",
+        "host": "127.0.0.1",
+        "dialect": "mysql"
+    },
+    "production": {
+        "username": "root",
+        "password": "nguyenthien22112005",
+        "database": "mobile_city_prod",
+        "host": "127.0.0.1",
+        "dialect": "mysql"
+    }
+}
