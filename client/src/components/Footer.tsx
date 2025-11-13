@@ -6,9 +6,9 @@ export default function Footer() {
             <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 {/* About */}
                 <div>
-                    <h3 className="font-bold text-lg mb-4 text-blue-400">Về ElectroShop</h3>
+                    <h3 className="font-bold text-lg mb-4 text-blue-400">Về Mobistore</h3>
                     <p className="text-gray-300 text-sm leading-relaxed">
-                        ElectroShop là nơi cung cấp các sản phẩm điện tử chất lượng cao với giá cạnh tranh nhất thị trường.
+                        Mobistore là nơi cung cấp các sản phẩm điện tử chất lượng cao với giá cạnh tranh nhất thị trường.
                     </p>
                 </div>
 
@@ -33,7 +33,7 @@ export default function Footer() {
                         </div>
                         <div className="flex items-center gap-2">
                             <FaEnvelope className="text-blue-400" />
-                            <span>info@electroshop.com</span>
+                            <span>info@mobileStore.com</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <FaMapMarkerAlt className="text-blue-400" />
@@ -55,7 +55,7 @@ export default function Footer() {
             </div>
 
             <div className="border-t border-gray-700 pt-6 text-center text-gray-400 text-sm">
-                <p>&copy; 2025 ElectroShop. All rights reserved.</p>
+                <p>&copy; 2025 Mobistore. All rights reserved.</p>
             </div>
         </footer>
     );

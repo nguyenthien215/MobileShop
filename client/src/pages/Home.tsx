@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaShoppingCart, FaStar, FaBox, FaTruck, FaHeadset } from 'react-icons/fa';
-
+import Banner from '../components/Banner';
 import axiosInstance from '../api/axiosConfig';
 
 interface Product {
@@ -50,9 +50,9 @@ export default function Home() {
 
 
             {/* Banner */}
-            <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+            {/* <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
                 <div className="max-w-7xl mx-auto px-4 text-center">
-                    <h1 className="text-5xl font-bold mb-4">Chào mừng đến ElectroShop</h1>
+                    <h1 className="text-5xl font-bold mb-4">Chào mừng đến Mobistore</h1>
                     <p className="text-xl mb-8 text-blue-100">
                         Khám phá những sản phẩm điện tử chất lượng cao với giá tốt nhất
                     </p>
@@ -63,7 +63,12 @@ export default function Home() {
                         Khám Phá Ngay
                     </Link>
                 </div>
-            </section>
+            </section> */}
+
+            {/* Banner Component */}
+            <div className="max-w-7xl mx-auto px-4 py-6 w-full">
+                <Banner autoPlay={true} interval={5000} />
+            </div>
 
             {/* Features */}
             <section className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
