@@ -16,6 +16,10 @@ const Category = sequelize.define('Category', {
         allowNull: false,
         unique: true,
     },
+    image: {                        // 👈 thêm trường này
+        type: DataTypes.STRING,
+        allowNull: true
+    },
 }, {
     timestamps: true,
     tableName: 'categories',

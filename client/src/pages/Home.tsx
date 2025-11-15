@@ -18,7 +18,11 @@ interface Category {
     id: string;
     name: string;
     slug: string;
+    image: string;
 }
+
+// Helper function ghép URL ảnh
+const getImageUrl = (path: string) => `${import.meta.env.VITE_API_URL}/${path}`;
 
 export default function Home() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -35,6 +39,7 @@ export default function Home() {
                 // Fetch products
                 const productsRes = await axiosInstance.get('/products?limit=8');
                 setProducts(productsRes.data.rows || []);
+                console.log('Categories data:', categories);
             } catch (error) {
                 console.error('Error fetching data:', error);
             } finally {
@@ -47,24 +52,6 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-
-
-            {/* Banner */}
-            {/* <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
-                <div className="max-w-7xl mx-auto px-4 text-center">
-                    <h1 className="text-5xl font-bold mb-4">Chào mừng đến Mobistore</h1>
-                    <p className="text-xl mb-8 text-blue-100">
-                        Khám phá những sản phẩm điện tử chất lượng cao với giá tốt nhất
-                    </p>
-                    <Link
-                        to="/products"
-                        className="inline-block bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-8 rounded-lg transition transform hover:scale-105"
-                    >
-                        Khám Phá Ngay
-                    </Link>
-                </div>
-            </section> */}
-
             {/* Banner Component */}
             <div className="max-w-7xl mx-auto px-4 py-6 w-full">
                 <Banner autoPlay={true} interval={5000} />
@@ -97,9 +84,25 @@ export default function Home() {
                         <Link
                             key={cat.id}
                             to={`/products?category=${cat.slug}`}
-                            className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-8 rounded-lg hover:shadow-xl transition transform hover:scale-105 text-center font-bold text-xl"
+                            className="bg-white rounded-lg shadow-md hover:shadow-xl transition transform hover:scale-105 overflow-hidden group"
                         >
-                            {cat.name}
+                            <div className="relative h-48 overflow-hidden">
+                                <img
+                                    src={cat.image ? getImageUrl(cat.image) : '/placeholder.png'}
+                                    alt={cat.name}
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                    onError={(e) => {
+                                        (e.currentTarget as HTMLImageElement).src = '/placeholder.png';
+                                    }}
+                                />
+                                {/* Overlay chỉ xuất hiện khi hover */}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
+                            </div>
+                            <div className="p-4 text-center">
+                                <h3 className="font-bold text-xl text-gray-800 group-hover:text-blue-600 transition">
+                                    {cat.name}
+                                </h3>
+                            </div>
                         </Link>
                     ))}
                 </div>
@@ -122,7 +125,7 @@ export default function Home() {
                             >
                                 <div className="relative h-48 bg-gray-200 overflow-hidden">
                                     <img
-                                        src={product.images?.[0] ? `${import.meta.env.VITE_API_URL}${product.images[0]}` : '/placeholder.png'}
+                                        src={product.images?.[0] ? getImageUrl(product.images[0]) : '/placeholder.png'}
                                         alt={product.name}
                                         className="w-full h-full object-cover group-hover:scale-110 transition"
                                     />
@@ -156,8 +159,6 @@ export default function Home() {
                     </div>
                 )}
             </section>
-
-
         </div>
     );
 }

@@ -14,8 +14,19 @@ module.exports = {
                     id: uuidv4(),
                     orderId: orderRows[0].id,
                     productId: productRows[0].id,
-                    price: productRows[0].price, // đúng cột trong DB
+                    unitPrice: productRows[0].price, // Thay price → unitPrice
+                    quantity: 2,
+                    total: productRows[0].price * 2, // Tính tổng
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                },
+                {
+                    id: uuidv4(),
+                    orderId: orderRows[0].id,
+                    productId: productRows[1]?.id || productRows[0].id,
+                    unitPrice: productRows[1]?.price || productRows[0].price,
                     quantity: 1,
+                    total: productRows[1]?.price || productRows[0].price,
                     createdAt: new Date(),
                     updatedAt: new Date()
                 }

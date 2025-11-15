@@ -5,6 +5,7 @@ module.exports = {
             id: { type: Sequelize.CHAR(36), primaryKey: true, defaultValue: Sequelize.UUIDV4 },
             name: { type: Sequelize.STRING, allowNull: false },
             slug: { type: Sequelize.STRING, allowNull: false, unique: true },
+            image: { type: Sequelize.STRING, allowNull: true },
             createdAt: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
             updatedAt: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
         }, { engine: 'InnoDB' });

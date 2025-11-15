@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require('cors');
 const sequelize = require("./config/db");
 require("dotenv").config();
 const authRoutes = require("./src/routes/auth.routes");
@@ -18,10 +19,18 @@ const PORT = process.env.PORT || 5000;
 // require("./src/models/user.model"); // <-- dòng này rất quan trọng
 require("./src/models/index");
 
-app.use(express.json()); // 👈 để đọc body JSON
+// Middleware CORS
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
+app.use(express.json()); // 👈 để đọc body JSON
+app.use(express.urlencoded({ extended: true }));
 // ✅ Kết nối route
-app.use("/api/auth", authRoutes); // → http://localhost:5000/api/auth/register / login
+app.use("/api/auth", authRoutes); // → /api/auth/register / login
 
 app.use('/api/admin', adminRoutes);
 
@@ -30,7 +39,8 @@ app.use("/api/products", productRoutes);    // ✅ hoạt động
 
 app.use("/api/reviews", reviewRoutes);
 
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Upload routes
 app.use('/api/upload', uploadRoutes);
@@ -52,7 +62,7 @@ app.get("/", (req, res) => {
 
 // ✅ Đồng bộ cơ sở dữ liệu (tạo bảng nếu chưa có)
 sequelize
-  .sync({ alter: true })
+  .sync()
   .then(() => console.log("🧩 Database synced"))
   .catch((err) => console.error("❌ Sync error:", err));
 

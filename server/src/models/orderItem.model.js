@@ -12,14 +12,18 @@ const OrderItem = sequelize.define('OrderItem', {
         allowNull: false,
     },
     productId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.CHAR(36),
+        allowNull: false,
+    },
+    unitPrice: {
+        type: DataTypes.FLOAT,
         allowNull: false,
     },
     quantity: {
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-    price: {
+    total: {
         type: DataTypes.FLOAT,
         allowNull: false,
     },
