@@ -12,6 +12,7 @@ interface Product {
     images: string[];
     rating?: number;
     stock: number;
+    Category?: { id: string; name: string; slug?: string };
 }
 
 interface Category {
@@ -21,40 +22,178 @@ interface Category {
     image: string;
 }
 
-// Helper function ghép URL ảnh
-const getImageUrl = (path: string) => `${import.meta.env.VITE_API_URL}/${path}`;
+// Chuẩn hóa ảnh
+const getImageUrl = (path: string) => {
+    if (!path) return '/placeholder.png';
+    const clean = path.startsWith('/') ? path : '/' + path;
+    return `${import.meta.env.VITE_API_URL}${clean}`;
+};
+
+const normalizeImages = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.map(v => v.startsWith('/') ? v : '/' + v);
+    if (typeof value === 'string') {
+        try {
+            const arr = JSON.parse(value);
+            return Array.isArray(arr)
+                ? arr.map((v: string) => v.startsWith('/') ? v : '/' + v)
+                : [];
+        } catch {
+            return [];
+        }
+    }
+    return [];
+};
 
 export default function Home() {
-    const [products, setProducts] = useState<Product[]>([]);
+    const [featured, setFeatured] = useState<Product[]>([]);
+    const [phones, setPhones] = useState<Product[]>([]);
+    const [laptops, setLaptops] = useState<Product[]>([]);
+    const [accessories, setAccessories] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingGroups, setLoadingGroups] = useState(true);
 
+    // Lấy dữ liệu chung (feature + categories)
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchBase = async () => {
             try {
-                // Fetch categories
-                const categoriesRes = await axiosInstance.get('/categories');
+                const [categoriesRes, productsRes] = await Promise.all([
+                    axiosInstance.get('/categories'),
+                    axiosInstance.get('/products?limit=8')
+                ]);
+
                 setCategories(categoriesRes.data);
 
-                // Fetch products
-                const productsRes = await axiosInstance.get('/products?limit=8');
-                setProducts(productsRes.data.rows || []);
-                console.log('Categories data:', categories);
-            } catch (error) {
-                console.error('Error fetching data:', error);
+                const normalizedFeatured: Product[] = (productsRes.data.rows || []).map((p: any) => ({
+                    ...p,
+                    images: normalizeImages(p.images)
+                }));
+                setFeatured(normalizedFeatured);
+            } catch (err) {
+                console.error('Fetch base error:', err);
             } finally {
                 setLoading(false);
             }
         };
-
-        fetchData();
+        fetchBase();
     }, []);
+
+    // Sau khi có categories → lấy từng nhóm
+    useEffect(() => {
+        if (!categories.length) return;
+
+        const phoneCat = categories.find(c => c.name === 'Điện thoại');
+        const laptopCat = categories.find(c => c.name === 'Laptop');
+        const accessoryCat = categories.find(c => c.name === 'Phụ kiện');
+
+        const fetchGroups = async () => {
+            try {
+                const requests: Promise<any>[] = [];
+                if (phoneCat) requests.push(axiosInstance.get(`/products?category=${phoneCat.id}&limit=4`));
+                if (laptopCat) requests.push(axiosInstance.get(`/products?category=${laptopCat.id}&limit=4`));
+                if (accessoryCat) requests.push(axiosInstance.get(`/products?category=${accessoryCat.id}&limit=4`));
+
+                const responses = await Promise.all(requests);
+
+                let idx = 0;
+                if (phoneCat) {
+                    const data = responses[idx++].data.rows || [];
+                    setPhones(data.map((p: any) => ({ ...p, images: normalizeImages(p.images) })));
+                }
+                if (laptopCat) {
+                    const data = responses[idx++].data.rows || [];
+                    setLaptops(data.map((p: any) => ({ ...p, images: normalizeImages(p.images) })));
+                }
+                if (accessoryCat) {
+                    const data = responses[idx++].data.rows || [];
+                    setAccessories(data.map((p: any) => ({ ...p, images: normalizeImages(p.images) })));
+                }
+            } catch (err) {
+                console.error('Fetch group error:', err);
+            } finally {
+                setLoadingGroups(false);
+            }
+        };
+
+        fetchGroups();
+    }, [categories]);
+
+    const renderProductGrid = (title: string, items: Product[]) => (
+        <section className="max-w-7xl mx-auto px-4 py-10">
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">{title}</h2>
+                {items.length > 0 && (
+                    <Link
+                        to={`/products?category=${items[0].Category?.id || ''}`}
+                        className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+                    >
+                        Xem tất cả →
+                    </Link>
+                )}
+            </div>
+            {loadingGroups ? (
+                <div className="text-center py-8 text-gray-600">Đang tải {title.toLowerCase()}...</div>
+            ) : items.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">Chưa có sản phẩm</div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {items.map(p => {
+                        const first = p.images?.[0] || '';
+                        return (
+                            <div
+                                key={p.id}
+                                className="bg-white rounded-lg shadow-md hover:shadow-xl transition overflow-hidden group"
+                            >
+                                <Link to={`/products/${p.id}`} className="block">
+                                    <div className="relative h-48 bg-gray-200 overflow-hidden">
+                                        <img
+                                            src={first ? getImageUrl(first) : '/placeholder.png'}
+                                            alt={p.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition"
+                                            onError={e => { e.currentTarget.src = '/placeholder.png'; }}
+                                        />
+                                        {p.stock === 0 && (
+                                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                                <span className="text-white font-bold">Hết hàng</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </Link>
+                                <div className="p-4 flex flex-col gap-3">
+                                    <Link to={`/products/${p.id}`} className="font-semibold line-clamp-2 text-gray-800 hover:text-blue-600">
+                                        {p.name}
+                                    </Link>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: 5 }).map((_, i) => (
+                                            <FaStar key={i} className={i < (p.rating || 4) ? 'text-yellow-400' : 'text-gray-300'} />
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-lg font-bold text-blue-600">
+                                            {p.price.toLocaleString('vi-VN')} đ
+                                        </span>
+                                        <Link
+                                            to={`/products/${p.id}`}
+                                            className="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1 rounded-md font-semibold transition"
+                                        >
+                                            Mua ngay
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </section>
+    );
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            {/* Banner Component */}
+            {/* Banner */}
             <div className="max-w-7xl mx-auto px-4 py-6 w-full">
-                <Banner autoPlay={true} interval={5000} />
+                <Banner autoPlay interval={5000} />
             </div>
 
             {/* Features */}
@@ -76,38 +215,6 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* Categories */}
-            <section className="max-w-7xl mx-auto px-4 py-12">
-                <h2 className="text-3xl font-bold mb-8 text-center">Danh mục sản phẩm</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {categories.map((cat) => (
-                        <Link
-                            key={cat.id}
-                            to={`/products?category=${cat.slug}`}
-                            className="bg-white rounded-lg shadow-md hover:shadow-xl transition transform hover:scale-105 overflow-hidden group"
-                        >
-                            <div className="relative h-48 overflow-hidden">
-                                <img
-                                    src={cat.image ? getImageUrl(cat.image) : '/placeholder.png'}
-                                    alt={cat.name}
-                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                                    onError={(e) => {
-                                        (e.currentTarget as HTMLImageElement).src = '/placeholder.png';
-                                    }}
-                                />
-                                {/* Overlay chỉ xuất hiện khi hover */}
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
-                            </div>
-                            <div className="p-4 text-center">
-                                <h3 className="font-bold text-xl text-gray-800 group-hover:text-blue-600 transition">
-                                    {cat.name}
-                                </h3>
-                            </div>
-                        </Link>
-                    ))}
-                </div>
-            </section>
-
             {/* Featured Products */}
             <section className="max-w-7xl mx-auto px-4 py-12">
                 <h2 className="text-3xl font-bold mb-8 text-center">Sản phẩm nổi bật</h2>
@@ -117,48 +224,60 @@ export default function Home() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {products.map((product) => (
-                            <Link
-                                key={product.id}
-                                to={`/products/${product.id}`}
-                                className="bg-white rounded-lg shadow-md hover:shadow-xl transition overflow-hidden group"
-                            >
-                                <div className="relative h-48 bg-gray-200 overflow-hidden">
-                                    <img
-                                        src={product.images?.[0] ? getImageUrl(product.images[0]) : '/placeholder.png'}
-                                        alt={product.name}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition"
-                                    />
-                                    {product.stock === 0 && (
-                                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                                            <span className="text-white font-bold">Hết hàng</span>
+                        {featured.map(product => {
+                            const firstImg = product.images?.[0] || '';
+                            return (
+                                <Link
+                                    key={product.id}
+                                    to={`/products/${product.id}`}
+                                    className="bg-white rounded-lg shadow-md hover:shadow-xl transition overflow-hidden group"
+                                >
+                                    <div className="relative h-48 bg-gray-200 overflow-hidden">
+                                        <img
+                                            src={firstImg ? getImageUrl(firstImg) : '/placeholder.png'}
+                                            alt={product.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition"
+                                            onError={e => { e.currentTarget.src = '/placeholder.png'; }}
+                                        />
+                                        {product.stock === 0 && (
+                                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                                <span className="text-white font-bold">Hết hàng</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="p-4">
+                                        <h3 className="font-bold text-gray-800 line-clamp-2 mb-2">{product.name}</h3>
+                                        <div className="flex items-center gap-1 mb-3">
+                                            {Array.from({ length: 5 }).map((_, i) => (
+                                                <FaStar
+                                                    key={i}
+                                                    className={i < (product.rating || 4) ? 'text-yellow-400' : 'text-gray-300'}
+                                                />
+                                            ))}
                                         </div>
-                                    )}
-                                </div>
-                                <div className="p-4">
-                                    <h3 className="font-bold text-gray-800 line-clamp-2 mb-2">{product.name}</h3>
-                                    <div className="flex items-center gap-1 mb-3">
-                                        {Array.from({ length: 5 }).map((_, i) => (
-                                            <FaStar
-                                                key={i}
-                                                className={i < (product.rating || 4) ? 'text-yellow-400' : 'text-gray-300'}
-                                            />
-                                        ))}
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-2xl font-bold text-blue-600">
+                                                {product.price.toLocaleString('vi-VN')} đ
+                                            </span>
+                                            <Link
+                                                to={`/products/${product.id}`}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition"
+                                            >
+                                                <FaShoppingCart size={18} />
+                                            </Link>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-2xl font-bold text-blue-600">
-                                            {product.price.toLocaleString('vi-VN')} đ
-                                        </span>
-                                        <button className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition">
-                                            <FaShoppingCart size={18} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
+                                </Link>
+                            );
+                        })}
                     </div>
                 )}
             </section>
+
+            {/* Nhóm theo loại */}
+            {renderProductGrid('Điện thoại', phones)}
+            {renderProductGrid('Laptop', laptops)}
+            {renderProductGrid('Phụ kiện', accessories)}
         </div>
     );
 }

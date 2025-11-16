@@ -9,12 +9,13 @@ import Checkout from './pages/Checkout';
 import OrderHistory from './pages/OrderHistory';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import { RequireAuth, RequireAdmin } from './components/RequireAuth';
 
 export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Routes - No Layout */}
+        {/* Public */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 

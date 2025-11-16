@@ -65,25 +65,21 @@ export default function Header() {
                         {user ? (
                             <div className="relative group">
                                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-700 hover:bg-green-900 transition cursor-pointer text-white">
-                                    <FaUser size={18} />
-                                    <span className="hidden sm:inline text-sm">{user.name}</span>
+                                    <span className="text-sm font-semibold">Xin chào {user.name}!</span>
                                 </div>
-                                {/* Dropdown */}
-                                <div className="absolute top-full right-0 mt-2 bg-white text-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-48">
-                                    <Link to="/orders" className="block px-4 py-2 hover:bg-gray-100 rounded-t-lg text-sm">
-                                        Đơn hàng của tôi
-                                    </Link>
+                                <div className="absolute top-full right-0 mt-2 bg-white text-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-52">
                                     {user.role === 'admin' && (
-                                        <Link to="/admin/dashboard" className="block px-4 py-2 hover:bg-gray-100 text-sm">
-                                            Admin Dashboard
+                                        <Link to="/admin/dashboard" className="block px-4 py-2 hover:bg-gray-100 text-sm font-medium">
+                                            Trang Admin
                                         </Link>
                                     )}
+                                    <Link to="/orders" className="block px-4 py-2 hover:bg-gray-100 text-sm">Đơn hàng của tôi</Link>
                                     <button
                                         onClick={() => {
                                             logout();
                                             navigate('/');
                                         }}
-                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-b-lg text-red-600 text-sm"
+                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 text-sm"
                                     >
                                         Đăng xuất
                                     </button>
