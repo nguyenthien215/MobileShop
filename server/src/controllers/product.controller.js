@@ -4,16 +4,47 @@ const { Op } = require('sequelize');
 
 exports.getAll = async (req, res) => {
     try {
-        const { search, category, page = 1, limit = 10 } = req.query;
+        const {
+            search,
+            category,         // categoryId (tùy chọn)
+            categorySlug,     // slug category
+            priceMin,
+            priceMax,
+            page = 1,
+            limit = 10
+        } = req.query;
+
         const where = {};
-        if (search) where.name = { [Op.like]: `%${search}%` };
-        if (category) where.categoryId = category;
+
+        if (search) {
+            where.name = { [Op.like]: `%${search}%` };
+        }
+
+        // Lọc giá
+        if (priceMin || priceMax) {
+            where.price = {};
+            if (priceMin) where.price[Op.gte] = Number(priceMin);
+            if (priceMax) where.price[Op.lte] = Number(priceMax);
+        }
+
+        let include = [{ model: Category, attributes: ['id', 'name', 'slug'] }];
+
+        // Ưu tiên categorySlug trước, nếu không có mới dùng categoryId
+        if (categorySlug) {
+            include = [{
+                model: Category,
+                attributes: ['id', 'name', 'slug'],
+                where: { slug: categorySlug }
+            }];
+        } else if (category) {
+            where.categoryId = category;
+        }
 
         const products = await Product.findAndCountAll({
             where,
-            include: [{ model: Category, attributes: ['id', 'name'] }],
+            include,
             offset: (page - 1) * limit,
-            limit: parseInt(limit),
+            limit: parseInt(limit)
         });
 
         res.json(products);
@@ -21,7 +52,6 @@ exports.getAll = async (req, res) => {
         res.status(500).json({ message: 'Lỗi server', error: err.message });
     }
 };
-
 exports.getById = async (req, res) => {
     try {
         const product = await Product.findByPk(req.params.id, {

@@ -37,11 +37,11 @@ export default function Header() {
                                 placeholder="Tìm kiếm sản phẩm..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full px-4 py-2 rounded-l-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                className="w-full px-4 py-2 rounded-l-lg text-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                             />
                             <button
                                 type="submit"
-                                className="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-r-lg transition flex items-center justify-center whitespace-nowrap"
+                                className="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-r-lg transition flex items-center justify-center whitespace-nowrap cursor-pointer"
                             >
                                 <FaSearch size={18} className="text-gray-800" />
                             </button>

@@ -45,6 +45,9 @@ const normalizeImages = (value: any): string[] => {
     return [];
 };
 
+const IMAGE_CLASS =
+    'w-full h-full object-contain transition-transform duration-300 group-hover:scale-105';
+
 export default function Home() {
     const [featured, setFeatured] = useState<Product[]>([]);
     const [phones, setPhones] = useState<Product[]>([]);
@@ -54,7 +57,7 @@ export default function Home() {
     const [loading, setLoading] = useState(true);
     const [loadingGroups, setLoadingGroups] = useState(true);
 
-    // Lấy dữ liệu chung (feature + categories)
+    // Fetch categories + featured
     useEffect(() => {
         const fetchBase = async () => {
             try {
@@ -79,10 +82,9 @@ export default function Home() {
         fetchBase();
     }, []);
 
-    // Sau khi có categories → lấy từng nhóm
+    // Fetch group products
     useEffect(() => {
         if (!categories.length) return;
-
         const phoneCat = categories.find(c => c.name === 'Điện thoại');
         const laptopCat = categories.find(c => c.name === 'Laptop');
         const accessoryCat = categories.find(c => c.name === 'Phụ kiện');
@@ -95,7 +97,6 @@ export default function Home() {
                 if (accessoryCat) requests.push(axiosInstance.get(`/products?category=${accessoryCat.id}&limit=4`));
 
                 const responses = await Promise.all(requests);
-
                 let idx = 0;
                 if (phoneCat) {
                     const data = responses[idx++].data.rows || [];
@@ -115,7 +116,6 @@ export default function Home() {
                 setLoadingGroups(false);
             }
         };
-
         fetchGroups();
     }, [categories]);
 
@@ -146,11 +146,11 @@ export default function Home() {
                                 className="bg-white rounded-lg shadow-md hover:shadow-xl transition overflow-hidden group"
                             >
                                 <Link to={`/products/${p.id}`} className="block">
-                                    <div className="relative h-48 bg-gray-200 overflow-hidden">
+                                    <div className="relative aspect-[4/3] bg-gray-100 flex items-center justify-center p-2">
                                         <img
                                             src={first ? getImageUrl(first) : '/placeholder.png'}
                                             alt={p.name}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition"
+                                            className={IMAGE_CLASS}
                                             onError={e => { e.currentTarget.src = '/placeholder.png'; }}
                                         />
                                         {p.stock === 0 && (
@@ -161,7 +161,10 @@ export default function Home() {
                                     </div>
                                 </Link>
                                 <div className="p-4 flex flex-col gap-3">
-                                    <Link to={`/products/${p.id}`} className="font-semibold line-clamp-2 text-gray-800 hover:text-blue-600">
+                                    <Link
+                                        to={`/products/${p.id}`}
+                                        className="font-semibold line-clamp-2 text-gray-800 hover:text-blue-600"
+                                    >
                                         {p.name}
                                     </Link>
                                     <div className="flex items-center gap-1">
@@ -197,7 +200,7 @@ export default function Home() {
             </div>
 
             {/* Features */}
-            <section className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <section className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
                     <FaBox className="text-4xl text-blue-600 mx-auto mb-4" />
                     <h3 className="font-bold text-lg mb-2">Sản phẩm chất lượng</h3>
@@ -215,7 +218,36 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* Featured Products */}
+            {/* Danh mục sản phẩm (đưa lên trước Featured) */}
+            <section className="max-w-7xl mx-auto px-4 py-10">
+                <h2 className="text-3xl font-bold mb-8 text-center">Danh mục sản phẩm</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {categories.map(cat => (
+                        <Link
+                            key={cat.id}
+                            to={`/products?category=${cat.slug}`}
+                            className="bg-white rounded-lg shadow-md hover:shadow-xl transition transform hover:scale-105 overflow-hidden group"
+                        >
+                            <div className="relative aspect-[4/3] bg-gray-100 flex items-center justify-center p-2">
+                                <img
+                                    src={cat.image ? getImageUrl(cat.image) : '/placeholder.png'}
+                                    alt={cat.name}
+                                    className="w-full h-full object-contain group-hover:scale-105 transition"
+                                    onError={e => { (e.currentTarget as HTMLImageElement).src = '/placeholder.png'; }}
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300" />
+                            </div>
+                            <div className="p-4 text-center">
+                                <h3 className="font-bold text-xl text-gray-800 group-hover:text-blue-600 transition">
+                                    {cat.name}
+                                </h3>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </section>
+
+            {/* Featured Products (ảnh thu nhỏ, không crop) */}
             <section className="max-w-7xl mx-auto px-4 py-12">
                 <h2 className="text-3xl font-bold mb-8 text-center">Sản phẩm nổi bật</h2>
                 {loading ? (
@@ -232,11 +264,11 @@ export default function Home() {
                                     to={`/products/${product.id}`}
                                     className="bg-white rounded-lg shadow-md hover:shadow-xl transition overflow-hidden group"
                                 >
-                                    <div className="relative h-48 bg-gray-200 overflow-hidden">
+                                    <div className="relative aspect-[4/3] bg-gray-100 flex items-center justify-center p-2">
                                         <img
                                             src={firstImg ? getImageUrl(firstImg) : '/placeholder.png'}
                                             alt={product.name}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition"
+                                            className={IMAGE_CLASS}
                                             onError={e => { e.currentTarget.src = '/placeholder.png'; }}
                                         />
                                         {product.stock === 0 && (
