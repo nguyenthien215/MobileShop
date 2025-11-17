@@ -3,7 +3,26 @@ import { useAuthStore } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import axiosInstance from '../api/axiosConfig';
 import { useNavigate } from 'react-router-dom';
-
+const normalizeImages = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value.map(v => (typeof v === 'string' && v.startsWith('/') ? v : '/' + v));
+    }
+    if (typeof value === 'string') {
+        try {
+            const arr = JSON.parse(value);
+            if (Array.isArray(arr)) {
+                return arr.map((v: string) => (v.startsWith('/') ? v : '/' + v));
+            }
+            // Nếu chuỗi đơn lẻ
+            return [value.startsWith('/') ? value : '/' + value];
+        } catch {
+            // Không phải JSON hợp lệ → coi là 1 path
+            return [value.startsWith('/') ? value : '/' + value];
+        }
+    }
+    return [];
+};
 const getImageUrl = (p: string) => {
     if (!p) return '/placeholder.png';
     const clean = p.startsWith('/') ? p : '/' + p;
@@ -51,6 +70,7 @@ export default function OrdersMulti() {
                 productId: it.Product.id,
                 quantity: it.quantity
             }));
+            alert('Thanh toán thành công!');
             const res = await axiosInstance.post('/orders', {
                 items: itemsPayload,
                 paymentMethod,
@@ -83,7 +103,9 @@ export default function OrdersMulti() {
 
             <div className="space-y-4 mb-8">
                 {selectedItems.map(it => {
-                    const first = Array.isArray(it.Product.images) ? it.Product.images[0] : '';
+                    const rawImages = (it.Product as any).images;
+                    const imgs = normalizeImages(rawImages);
+                    const first = imgs[0] || '';
                     return (
                         <div key={it.id} className="flex gap-4 bg-white p-4 rounded shadow">
                             <div className="w-24 h-24 bg-gray-100 flex items-center justify-center rounded">

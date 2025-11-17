@@ -14,6 +14,7 @@ const uploadRoutes = require('./src/routes/upload.routes');
 const orderRoutes = require("./src/routes/order.routes");
 const cartRoutes = require('./src/routes/cart.routes');
 
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -48,9 +49,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/upload', uploadRoutes);
 // Kiểm tra kết nối MySQL
 
-app.use("/api/orders", orderRoutes);
-
 app.use('/api/cart', cartRoutes);
+
+app.use("/api/orders", orderRoutes);
 
 sequelize
   .authenticate()

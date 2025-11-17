@@ -4,9 +4,18 @@ const orderController = require('../controllers/order.controller');
 const jwt = require('../middlewares/jwt.middleware');
 const isAdmin = require('../middlewares/isAdmin.middleware');
 
-// Tạo đơn hàng (User)
-// router.post('/quick', jwt, orderController.quickOrder);
-router.post('/', jwt, orderController.createOrder); // dùng cho nhiều sản phẩm
+console.log('[order.routes] loaded');
+
+router.get('/debug', (req, res) => res.json({ ok: true }));
+
+// Tạo đơn hàng nhanh (User)
+router.post('/quick', jwt, (req, res, next) => {
+    console.log('[order.routes] hit /quick');
+    next();
+}, orderController.quickOrder);
+
+// Đặt nhiều sản phẩm (nếu dùng)
+router.post('/', jwt, orderController.createOrder);
 
 // Lấy đơn hàng của user
 router.get('/my-orders', jwt, orderController.getMyOrders);

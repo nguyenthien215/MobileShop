@@ -1,6 +1,29 @@
 import { useCart } from '../contexts/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaTrash, FaPlus, FaMinus, FaShoppingCart } from 'react-icons/fa';
+// (Tuỳ chọn) Nếu đã tạo ToastContext:
+// import { useToast } from '../contexts/ToastContext';
+
+const normalizeImages = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value.map(v => (typeof v === 'string' && v.startsWith('/') ? v : '/' + v));
+    }
+    if (typeof value === 'string') {
+        try {
+            const arr = JSON.parse(value);
+            if (Array.isArray(arr)) {
+                return arr.map((v: string) => (v.startsWith('/') ? v : '/' + v));
+            }
+            // Nếu chuỗi đơn lẻ
+            return [value.startsWith('/') ? value : '/' + value];
+        } catch {
+            // Không phải JSON hợp lệ → coi là 1 path
+            return [value.startsWith('/') ? value : '/' + value];
+        }
+    }
+    return [];
+};
 
 const getImageUrl = (p: string) => {
     if (!p) return '/placeholder.png';
@@ -11,11 +34,16 @@ const getImageUrl = (p: string) => {
 export default function Cart() {
     const { items, total, updateQuantity, removeItem, toggleSelect, selectedItems } = useCart();
     const navigate = useNavigate();
+    // const { addToast } = useToast(); // (tuỳ chọn)
 
     const handleCheckout = () => {
         if (selectedItems.length === 0) return;
-        // chuyển sang trang multi checkout
         navigate('/orders/checkout');
+    };
+
+    const handleRemove = async (id: number) => {
+        await removeItem(id);
+        // addToast?.('Đã xóa sản phẩm khỏi giỏ hàng', { type: 'info' });
     };
 
     return (
@@ -32,10 +60,16 @@ export default function Cart() {
                 <>
                     <div className="space-y-4">
                         {items.map(it => {
-                            const first = Array.isArray(it.Product.images) ? it.Product.images[0] : '';
+                            const rawImages = (it.Product as any).images;
+                            const imgs = normalizeImages(rawImages);
+                            const first = imgs[0] || '';
                             const lineTotal = it.quantity * it.Product.price;
+
                             return (
-                                <div key={it.id} className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-lg shadow">
+                                <div
+                                    key={it.id}
+                                    className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-lg shadow"
+                                >
                                     <div className="flex items-center gap-4 flex-1">
                                         <input
                                             type="checkbox"
@@ -52,7 +86,10 @@ export default function Cart() {
                                             />
                                         </div>
                                         <div className="flex flex-col gap-2 flex-1">
-                                            <Link to={`/products/${it.Product.id}`} className="font-semibold hover:text-blue-600">
+                                            <Link
+                                                to={`/products/${it.Product.id}`}
+                                                className="font-semibold hover:text-blue-600 line-clamp-2"
+                                            >
                                                 {it.Product.name}
                                             </Link>
                                             <span className="text-blue-600 font-bold">
@@ -63,12 +100,18 @@ export default function Cart() {
                                                     onClick={() => updateQuantity(it.id, it.quantity - 1)}
                                                     disabled={it.quantity <= 1}
                                                     className="p-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
-                                                ><FaMinus /></button>
-                                                <span className="min-w-[32px] text-center font-semibold">{it.quantity}</span>
+                                                >
+                                                    <FaMinus />
+                                                </button>
+                                                <span className="min-w-[32px] text-center font-semibold">
+                                                    {it.quantity}
+                                                </span>
                                                 <button
                                                     onClick={() => updateQuantity(it.id, it.quantity + 1)}
                                                     className="p-2 bg-gray-200 rounded hover:bg-gray-300"
-                                                ><FaPlus /></button>
+                                                >
+                                                    <FaPlus />
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -77,7 +120,7 @@ export default function Cart() {
                                             {lineTotal.toLocaleString('vi-VN')} đ
                                         </span>
                                         <button
-                                            onClick={() => removeItem(it.id)}
+                                            onClick={() => handleRemove(it.id)}
                                             className="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm"
                                         >
                                             <FaTrash /> Xóa
@@ -92,12 +135,14 @@ export default function Cart() {
                     <div className="mt-8 bg-white p-6 rounded-lg shadow flex flex-col gap-4">
                         <div className="flex justify-between text-lg">
                             <span className="font-semibold">Tổng cộng:</span>
-                            <span className="font-bold text-blue-600">{total.toLocaleString('vi-VN')} đ</span>
+                            <span className="font-bold text-blue-600">
+                                {total.toLocaleString('vi-VN')} đ
+                            </span>
                         </div>
                         <button
                             onClick={handleCheckout}
                             disabled={selectedItems.length === 0}
-                            className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-lg font-semibold transition disabled:opacity-50"
+                            className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-lg font-semibold transition disabled:opacity-50 cursor-pointer"
                         >
                             Mua ngay ({selectedItems.length})
                         </button>

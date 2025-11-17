@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axiosConfig';
-import { useNavigate } from 'react-router-dom';
-import { useCart } from '../contexts/CartContext';
-import { useToast } from '../contexts/ToastContext';
 import { FaShoppingCart } from 'react-icons/fa';
+import { useCart } from '../contexts/CartContext';
+import { useAuthStore } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext'; // ✅ toast
 
 interface Product {
     id: string;
@@ -23,7 +23,7 @@ const normalizeImages = (value: any): string[] => {
         try {
             const arr = JSON.parse(value);
             return Array.isArray(arr)
-                ? arr.map((v: string) => v.startsWith('/') ? v : '/' + v)
+                ? arr.map((v: string) => (v.startsWith('/') ? v : '/' + v))
                 : [];
         } catch {
             return [];
@@ -32,31 +32,21 @@ const normalizeImages = (value: any): string[] => {
     return [];
 };
 
-
 const getImageUrl = (path: string) => {
     if (!path) return '/placeholder.png';
     const clean = path.startsWith('/') ? path : '/' + path;
     return `${import.meta.env.VITE_API_URL}${clean}`;
 };
 
-
 export default function ProductDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { addToCart } = useCart();
+    const { user } = useAuthStore();
+    const { addToast } = useToast();                // ✅ use toast
+    const [authWarning, setAuthWarning] = useState('');
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
-    const { addToCart } = useCart();
-    const { addToast } = useToast();
-
-    const handleAddCart = async () => {
-        if (!product) return;
-        try {
-            await addToCart(product.id, 1);
-            addToast(`Đã thêm "${product.name}" vào giỏ hàng!`);
-        } catch {
-            addToast('Thêm vào giỏ hàng thất bại', { type: 'error' });
-        }
-    };
 
     useEffect(() => {
         const load = async () => {
@@ -74,10 +64,45 @@ export default function ProductDetail() {
         if (id) load();
     }, [id]);
 
-    if (loading) return <div className="max-w-5xl mx-auto px-4 py-12 text-center text-gray-600">Đang tải...</div>;
-    if (!product) return <div className="max-w-5xl mx-auto px-4 py-12 text-center text-gray-500">Không tìm thấy sản phẩm</div>;
+    const handleBuyNow = () => {
+        if (!product) return;
+        if (!user) {
+            setAuthWarning('Bạn cần đăng nhập để mua sản phẩm.');
+            addToast('Bạn cần đăng nhập để mua sản phẩm.', { type: 'info' });
+            return;
+        }
+        if (product.stock > 0) {
+            navigate(`/orders/create/${product.id}`);
+        }
+    };
+
+    const handleAddCart = async () => {
+        if (!product) return;
+        if (!user) {
+            setAuthWarning('Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.');
+            addToast('Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.', { type: 'info' });
+            return;
+        }
+        if (product.stock === 0) {
+            addToast('Sản phẩm đã hết hàng.', { type: 'error' });
+            return;
+        }
+        try {
+            await addToCart(product.id, 1);
+            setAuthWarning('');
+            addToast(`Đã thêm "${product.name}" vào giỏ hàng!`, { type: 'success' });
+        } catch {
+            addToast('Không thể thêm vào giỏ hàng lúc này.', { type: 'error' });
+        }
+    };
+
+    if (loading)
+        return <div className="max-w-5xl mx-auto px-4 py-12 text-center text-gray-600">Đang tải...</div>;
+    if (!product)
+        return <div className="max-w-5xl mx-auto px-4 py-12 text-center text-gray-500">Không tìm thấy sản phẩm</div>;
 
     const first = (product.images as string[])[0] || '';
+
     return (
         <div className="max-w-5xl mx-auto px-4 py-10">
             <div className="grid md:grid-cols-2 gap-8">
@@ -113,11 +138,12 @@ export default function ProductDetail() {
                             {product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
                         </span>
                     </div>
+
                     <div className="flex gap-3 mt-4">
                         <button
                             className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold transition disabled:opacity-50"
                             disabled={product.stock === 0}
-                            onClick={() => product.stock > 0 && navigate(`/orders/create/${product.id}`)}
+                            onClick={handleBuyNow}
                         >
                             {product.stock === 0 ? 'Hết hàng' : 'Mua ngay'}
                         </button>
@@ -126,9 +152,20 @@ export default function ProductDetail() {
                             disabled={product.stock === 0}
                             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition disabled:opacity-50"
                         >
-                            <FaShoppingCart /> Thêm vào giỏ
+                            <FaShoppingCart />
+                            Thêm vào giỏ
                         </button>
                     </div>
+
+                    {authWarning && !user && (
+                        <div className="mt-2 text-sm text-red-600 flex flex-col gap-1">
+                            <span>{authWarning}</span>
+                            <Link to="/login" className="text-blue-600 hover:underline inline-block">
+                                Đăng nhập ngay →
+                            </Link>
+                        </div>
+                    )}
+
                     <Link to="/" className="text-sm text-gray-600 hover:text-gray-800 mt-4 inline-block">
                         ← Quay về trang chủ
                     </Link>
