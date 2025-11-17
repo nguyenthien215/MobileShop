@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaShoppingCart, FaUser, FaSearch, FaBars, FaTimes, FaMobileAlt, FaLaptop, FaHeadphones, FaHome } from 'react-icons/fa';
 import { useAuthStore } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 
 export default function Header() {
     const [searchQuery, setSearchQuery] = useState('');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
+    const { count } = useCart();
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -51,14 +53,13 @@ export default function Header() {
                     {/* Right Icons */}
                     <div className="flex items-center gap-3">
                         {/* Cart Icon */}
-                        <Link
-                            to="/cart"
-                            className="relative text-white hover:text-yellow-300 transition p-2 rounded-lg hover:bg-green-700"
-                        >
+                        <Link to="/cart" className="relative text-white hover:text-yellow-300 transition p-2 rounded-lg hover:bg-green-700">
                             <FaShoppingCart size={24} />
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
-                                0
-                            </span>
+                            {count > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-6 h-6 flex items-center justify-center font-bold px-1">
+                                    {count}
+                                </span>
+                            )}
                         </Link>
 
                         {/* User Menu */}

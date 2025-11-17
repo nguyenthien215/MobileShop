@@ -5,6 +5,7 @@ const Product = require('./product.model');
 const Category = require('./category.model');
 const CartItem = require('./cartItem.model');
 const Review = require('./review.model');
+const Payment = require('./payment.model');
 
 // ===================== ASSOCIATIONS =====================
 
@@ -15,6 +16,10 @@ Order.belongsTo(User, { foreignKey: 'userId' });
 // 🔹 Order - OrderItem
 Order.hasMany(OrderItem, { foreignKey: 'orderId', as: 'items' });
 OrderItem.belongsTo(Order, { foreignKey: 'orderId' });
+
+// ... sau phần Order - OrderItem
+Order.hasOne(Payment, { foreignKey: 'orderId', as: 'payment' });
+Payment.belongsTo(Order, { foreignKey: 'orderId' });
 
 // 🔹 Product - OrderItem
 Product.hasMany(OrderItem, { foreignKey: 'productId' });
@@ -50,4 +55,5 @@ module.exports = {
     Category,
     CartItem,
     Review,
+    Payment
 };

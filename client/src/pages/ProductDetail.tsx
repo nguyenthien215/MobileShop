@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axiosInstance from '../api/axiosConfig';
+import { useNavigate } from 'react-router-dom';
+import { useCart } from '../contexts/CartContext';
+import { useToast } from '../contexts/ToastContext';
+import { FaShoppingCart } from 'react-icons/fa';
 
 interface Product {
     id: string;
@@ -28,16 +32,31 @@ const normalizeImages = (value: any): string[] => {
     return [];
 };
 
+
 const getImageUrl = (path: string) => {
     if (!path) return '/placeholder.png';
     const clean = path.startsWith('/') ? path : '/' + path;
     return `${import.meta.env.VITE_API_URL}${clean}`;
 };
 
+
 export default function ProductDetail() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
+    const { addToCart } = useCart();
+    const { addToast } = useToast();
+
+    const handleAddCart = async () => {
+        if (!product) return;
+        try {
+            await addToCart(product.id, 1);
+            addToast(`Đã thêm "${product.name}" vào giỏ hàng!`);
+        } catch {
+            addToast('Thêm vào giỏ hàng thất bại', { type: 'error' });
+        }
+    };
 
     useEffect(() => {
         const load = async () => {
@@ -94,12 +113,20 @@ export default function ProductDetail() {
                             {product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
                         </span>
                     </div>
-                    <div className="mt-4">
+                    <div className="flex gap-3 mt-4">
                         <button
-                            className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold transition"
+                            className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold transition disabled:opacity-50"
                             disabled={product.stock === 0}
+                            onClick={() => product.stock > 0 && navigate(`/orders/create/${product.id}`)}
                         >
                             {product.stock === 0 ? 'Hết hàng' : 'Mua ngay'}
+                        </button>
+                        <button
+                            onClick={handleAddCart}
+                            disabled={product.stock === 0}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition disabled:opacity-50"
+                        >
+                            <FaShoppingCart /> Thêm vào giỏ
                         </button>
                     </div>
                     <Link to="/" className="text-sm text-gray-600 hover:text-gray-800 mt-4 inline-block">

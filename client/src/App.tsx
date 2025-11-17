@@ -9,6 +9,8 @@ import Checkout from './pages/Checkout';
 import OrderHistory from './pages/OrderHistory';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Orders from './pages/Orders';
+import OrdersMulti from './pages/OrdersMulti';
 import { RequireAuth, RequireAdmin } from './components/RequireAuth';
 
 export default function App() {
@@ -27,6 +29,8 @@ export default function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/orders" element={<OrderHistory />} />
+          <Route path="/orders/create/:productId" element={<Orders />} />
+          <Route path="/orders/checkout" element={<OrdersMulti />} />
         </Route>
 
         {/* Admin Layout Routes */}

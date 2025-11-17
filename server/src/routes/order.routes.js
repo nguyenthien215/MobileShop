@@ -5,7 +5,8 @@ const jwt = require('../middlewares/jwt.middleware');
 const isAdmin = require('../middlewares/isAdmin.middleware');
 
 // Tạo đơn hàng (User)
-router.post('/', jwt, orderController.createOrder);
+// router.post('/quick', jwt, orderController.quickOrder);
+router.post('/', jwt, orderController.createOrder); // dùng cho nhiều sản phẩm
 
 // Lấy đơn hàng của user
 router.get('/my-orders', jwt, orderController.getMyOrders);
