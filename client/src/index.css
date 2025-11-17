@@ -1,1 +1,65 @@
 @import "tailwindcss";
+
+/* Biến màu + chuyển động */
+html {
+    --bg: #f9fafb;
+    --text: #1f2937;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --header: #003a31;
+    --headerText: #ffffff;
+    --link: #1d4ed8;
+    --linkHover: #2563eb;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: background-color .35s ease, color .35s ease;
+    scroll-behavior: smooth;
+}
+
+html.dark {
+    --bg: #0f172a;
+    --text: #f1f5f9;
+    --card: #1e293b;
+    --border: #334155;
+    --header: #0d2531;
+    --headerText: #f1f5f9;
+    --link: #93c5fd;
+    --linkHover: #bfdbfe;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    transition: background-color .35s ease, color .35s ease;
+}
+
+.dark .bg-white {
+    background-color: var(--card) !important;
+}
+
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-gray-500 {
+    color: var(--text) !important;
+}
+
+.dark a {
+    color: var(--link);
+}
+
+.dark a:hover {
+    color: var(--linkHover);
+}
+
+/* Header override */
+header {
+    background-color: var(--header) !important;
+    color: var(--headerText);
+    transition: background-color .35s ease;
+}
+
+/* Smooth card transitions */
+.bg-white,
+.dark .bg-white {
+    transition: background-color .35s ease, color .35s ease;
+}

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaShoppingCart, FaUser, FaSearch, FaBars, FaTimes, FaMobileAlt, FaLaptop, FaHeadphones, FaHome } from 'react-icons/fa';
+import { FaShoppingCart, FaUser, FaSearch, FaBars, FaTimes, FaMobileAlt, FaLaptop, FaHeadphones, FaHome, FaMoon, FaSun } from 'react-icons/fa';
 import { useAuthStore } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import { useTheme } from '../contexts/ThemeContext'; // <== NEW
 
 export default function Header() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -10,6 +11,7 @@ export default function Header() {
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
     const { count } = useCart();
+    const { theme, toggleTheme } = useTheme(); // <== NEW
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -19,9 +21,8 @@ export default function Header() {
     };
 
     return (
-        <header className="shadow-lg" style={{ backgroundColor: '#003a31' }}>
+        <header className="shadow-lg">
             <div className="max-w-7xl mx-auto px-4 py-4">
-                {/* Top Row - Logo & Search */}
                 <div className="flex items-center justify-between gap-4">
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2 font-bold text-2xl text-white hover:text-gray-200 transition flex-shrink-0">
@@ -31,7 +32,7 @@ export default function Header() {
                         <span className="hidden sm:inline">Mobistore</span>
                     </Link>
 
-                    {/* Search Bar - Hidden on mobile */}
+                    {/* Search desktop */}
                     <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md">
                         <div className="relative w-full flex">
                             <input
@@ -39,7 +40,7 @@ export default function Header() {
                                 placeholder="Tìm kiếm sản phẩm..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full px-4 py-2 rounded-l-lg text-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                className="w-full px-4 py-2 rounded-l-lg text-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white dark:bg-[var(--card)] dark:text-[var(--text)]"
                             />
                             <button
                                 type="submit"
@@ -50,9 +51,19 @@ export default function Header() {
                         </div>
                     </form>
 
-                    {/* Right Icons */}
+                    {/* Right icons */}
                     <div className="flex items-center gap-3">
-                        {/* Cart Icon */}
+                        {/* Theme Toggle */}
+                        <button
+                            onClick={toggleTheme}
+                            aria-label="Toggle theme"
+                            className="p-2 rounded-lg bg-green-700 hover:bg-green-800 text-white transition"
+                            title={theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối'}
+                        >
+                            {theme === 'dark' ? <FaSun size={20} /> : <FaMoon size={20} />}
+                        </button>
+
+                        {/* Cart */}
                         <Link to="/cart" className="relative text-white hover:text-yellow-300 transition p-2 rounded-lg hover:bg-green-700">
                             <FaShoppingCart size={24} />
                             {count > 0 && (
@@ -62,25 +73,27 @@ export default function Header() {
                             )}
                         </Link>
 
-                        {/* User Menu */}
+                        {/* User menu */}
                         {user ? (
                             <div className="relative group">
                                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-700 hover:bg-green-900 transition cursor-pointer text-white">
                                     <span className="text-sm font-semibold">Xin chào {user.name}!</span>
                                 </div>
-                                <div className="absolute top-full right-0 mt-2 bg-white text-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-52">
+                                <div className="absolute top-full right-0 mt-2 bg-white dark:bg-[var(--card)] text-gray-800 dark:text-[var(--text)] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-52">
                                     {user.role === 'admin' && (
-                                        <Link to="/admin/dashboard" className="block px-4 py-2 hover:bg-gray-100 text-sm font-medium">
+                                        <Link to="/admin/dashboard" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-[var(--border)] text-sm font-medium">
                                             Trang Admin
                                         </Link>
                                     )}
-                                    <Link to="/orders" className="block px-4 py-2 hover:bg-gray-100 text-sm">Đơn hàng của tôi</Link>
+                                    <Link to="/orders" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-[var(--border)] text-sm">
+                                        Đơn hàng của tôi
+                                    </Link>
                                     <button
                                         onClick={() => {
                                             logout();
                                             navigate('/');
                                         }}
-                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 text-sm"
+                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-[var(--border)] text-red-600 text-sm"
                                     >
                                         Đăng xuất
                                     </button>
@@ -103,7 +116,7 @@ export default function Header() {
                             </div>
                         )}
 
-                        {/* Mobile Menu Toggle */}
+                        {/* Mobile menu toggle */}
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             className="md:hidden p-2 text-white"
@@ -113,7 +126,7 @@ export default function Header() {
                     </div>
                 </div>
 
-                {/* Mobile Search */}
+                {/* Mobile search */}
                 <form onSubmit={handleSearch} className="md:hidden mt-4">
                     <div className="relative w-full flex">
                         <input
@@ -121,7 +134,7 @@ export default function Header() {
                             placeholder="Tìm kiếm..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full px-4 py-2 rounded-l-lg text-gray-800 focus:outline-none"
+                            className="w-full px-4 py-2 rounded-l-lg text-gray-800 dark:text-[var(--text)] bg-white dark:bg-[var(--card)] focus:outline-none"
                         />
                         <button type="submit" className="bg-yellow-500 px-3 py-2 rounded-r-lg flex items-center justify-center">
                             <FaSearch size={18} className="text-gray-800" />
@@ -129,23 +142,19 @@ export default function Header() {
                     </div>
                 </form>
 
-                {/* Navigation Menu */}
+                {/* Nav */}
                 <nav className={`${mobileMenuOpen ? 'block' : 'hidden'} md:flex md:items-center gap-8 mt-4 md:mt-0 text-white`}>
                     <Link to="/" className="flex items-center gap-2 hover:text-yellow-300 transition font-semibold text-sm py-2 md:py-0">
-                        <FaHome size={18} />
-                        Trang chủ
+                        <FaHome size={18} /> Trang chủ
                     </Link>
                     <Link to="/products?category=dien-thoai" className="flex items-center gap-2 hover:text-yellow-300 transition font-semibold text-sm py-2 md:py-0">
-                        <FaMobileAlt size={18} />
-                        Điện thoại
+                        <FaMobileAlt size={18} /> Điện thoại
                     </Link>
                     <Link to="/products?category=laptop" className="flex items-center gap-2 hover:text-yellow-300 transition font-semibold text-sm py-2 md:py-0">
-                        <FaLaptop size={18} />
-                        Laptop
+                        <FaLaptop size={18} /> Laptop
                     </Link>
                     <Link to="/products?category=phu-kien" className="flex items-center gap-2 hover:text-yellow-300 transition font-semibold text-sm py-2 md:py-0">
-                        <FaHeadphones size={18} />
-                        Phụ kiện
+                        <FaHeadphones size={18} /> Phụ kiện
                     </Link>
                 </nav>
             </div>

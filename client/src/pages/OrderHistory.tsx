@@ -8,7 +8,12 @@ interface Order {
     totalAmount: number;
     status: string;
     payment?: { method: string; status: string; amount: number };
-    items: { id: string; quantity: number; total: number; Product?: { name: string } }[];
+    items: {
+        id: string;
+        quantity: number;
+        total: number;
+        Product?: { id: string; name: string };
+    }[];
     createdAt: string;
 }
 
@@ -61,11 +66,25 @@ export default function OrderHistory() {
                                 </div>
                             </div>
                             <ul className="mt-4 text-sm list-disc list-inside space-y-1">
-                                {o.items.map(it => (
-                                    <li key={it.id}>
-                                        {it.Product?.name} x {it.quantity} = {it.total.toLocaleString('vi-VN')} đ
-                                    </li>
-                                ))}
+                                {o.items.map(it => {
+                                    const canReview =
+                                        (o.payment?.status === 'paid') || (o.status === 'completed');
+                                    return (
+                                        <li key={it.id} className="flex items-center justify-between gap-2">
+                                            <span>
+                                                {it.Product?.name} x {it.quantity} = {it.total.toLocaleString('vi-VN')} đ
+                                            </span>
+                                            {canReview && it.Product?.id && (
+                                                <Link
+                                                    to={`/products/${it.Product.id}?review=1`}
+                                                    className="text-xs px-2 py-1 rounded bg-yellow-500 hover:bg-yellow-600 text-white"
+                                                >
+                                                    Đánh giá
+                                                </Link>
+                                            )}
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     ))}
