@@ -7,6 +7,7 @@ interface Order {
     orderNumber: string;
     totalAmount: number;
     status: string;
+    paymentMethod: string; // thêm để kiểm tra
     payment?: { method: string; status: string; amount: number };
     items: {
         id: string;
@@ -58,7 +59,7 @@ export default function OrderHistory() {
                                         {o.totalAmount.toLocaleString('vi-VN')} đ
                                     </p>
                                     <p className="text-xs">
-                                        Thanh toán: {o.payment?.method} ({o.payment?.status})
+                                        Thanh toán: {o.paymentMethod} {o.payment ? `(${o.payment.status})` : ''}
                                     </p>
                                     <p className="text-xs">
                                         Trạng thái: <span className="font-medium">{o.status}</span>
@@ -67,8 +68,14 @@ export default function OrderHistory() {
                             </div>
                             <ul className="mt-4 text-sm list-disc list-inside space-y-1">
                                 {o.items.map(it => {
-                                    const canReview =
-                                        (o.payment?.status === 'paid') || (o.status === 'completed');
+                                    const canReview = (
+                                        // Ngân hàng đã trả: có payment.status = paid
+                                        (o.paymentMethod === 'bank' && o.payment?.status === 'paid') ||
+                                        // Ngân hàng cũ fallback chưa có payment vẫn cho
+                                        (o.paymentMethod === 'bank' && !o.payment) ||
+                                        // COD chỉ khi hoàn tất
+                                        (o.paymentMethod === 'COD' && o.status === 'completed')
+                                    );
                                     return (
                                         <li key={it.id} className="flex items-center justify-between gap-2">
                                             <span>

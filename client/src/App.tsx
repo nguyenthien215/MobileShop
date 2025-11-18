@@ -11,6 +11,14 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Orders from './pages/Orders';
 import OrdersMulti from './pages/OrdersMulti';
+import Dashboard from './pages/admin/Dashboard';
+import Users from './pages/admin/Users';
+import Products from './pages/admin/Products';
+import Categories from './pages/admin/Categories';
+import OrdersAdmin from './pages/admin/OrdersAdmin';
+import ReviewsAdmin from './pages/admin/ReviewsAdmin';
+import PaymentsAdmin from './pages/admin/PaymentsAdmin';
+import Settings from './pages/admin/Settings';
 import { RequireAuth, RequireAdmin } from './components/RequireAuth';
 
 export default function App() {
@@ -34,8 +42,15 @@ export default function App() {
         </Route>
 
         {/* Admin Layout Routes */}
-        <Route element={<AdminLayout />}>
-          <Route path="/admin/dashboard" element={<div className="text-2xl font-bold">Admin Dashboard</div>} />
+        <Route element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
+          <Route path="/admin/dashboard" element={<Dashboard />} />
+          <Route path="/admin/users" element={<Users />} />
+          <Route path="/admin/products" element={<Products />} />
+          <Route path="/admin/categories" element={<Categories />} />
+          <Route path="/admin/orders" element={<OrdersAdmin />} />
+          <Route path="/admin/reviews" element={<ReviewsAdmin />} />
+          <Route path="/admin/payments" element={<PaymentsAdmin />} />
+          <Route path="/admin/settings" element={<Settings />} />
         </Route>
       </Routes>
     </Router>

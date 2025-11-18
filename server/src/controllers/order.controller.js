@@ -12,12 +12,15 @@ function generateOrderNumber() {
     return `ES-${ymd}-${rand}`;
 }
 
-// POST /api/orders
+// POST /api/orders  (Đơn nhiều sản phẩm)
 exports.createOrder = async (req, res) => {
     const { items, shippingAddress, paymentMethod } = req.body;
     const userId = req.user.id;
 
     if (!items || !items.length) return res.status(400).json({ message: 'Giỏ hàng rỗng' });
+    if (!paymentMethod || !['COD', 'bank'].includes(paymentMethod)) {
+        return res.status(400).json({ message: 'Phương thức thanh toán không hợp lệ' });
+    }
 
     const t = await sequelize.transaction();
     try {
@@ -50,11 +53,23 @@ exports.createOrder = async (req, res) => {
             await OrderItem.create({ ...item, orderId: order.id }, { transaction: t });
         }
 
+        // Tạo payment (giống quickOrder)
+        const paymentStatus = paymentMethod === 'bank' ? 'paid' : 'unpaid';
+        await Payment.create({
+            orderId: order.id,
+            method: paymentMethod,
+            amount: totalAmount,
+            status: paymentStatus
+        }, { transaction: t });
+
         await t.commit();
 
-        // Trả về chi tiết order
+        // Trả về chi tiết order kèm payment
         const orderDetail = await Order.findByPk(order.id, {
-            include: [{ model: OrderItem, as: 'items', include: [Product] }]
+            include: [
+                { model: OrderItem, as: 'items', include: [Product] },
+                { model: Payment, as: 'payment' }
+            ]
         });
 
         res.status(201).json(orderDetail);
@@ -118,14 +133,15 @@ exports.updateStatus = async (req, res) => {
     }
 };
 
+// POST /api/orders/quick (đơn 1 sản phẩm)
 exports.quickOrder = async (req, res) => {
     const {
         productId,
         quantity,
         phone,
         address,
-        paymentMethod,   // 'COD' | 'bank'
-        bankName,        // nếu bank
+        paymentMethod,
+        bankName,
         cardHolderName,
         accountNumber
     } = req.body;
@@ -151,7 +167,7 @@ exports.quickOrder = async (req, res) => {
             orderNumber,
             userId,
             totalAmount,
-            status: paymentMethod === 'bank' ? 'pending' : 'pending',
+            status: 'pending',
             shippingAddress: JSON.stringify({ phone, address }),
             paymentMethod
         }, { transaction: t });
@@ -172,8 +188,6 @@ exports.quickOrder = async (req, res) => {
             amount: totalAmount,
             status: paymentStatus
         }, { transaction: t });
-
-        // (Có thể ghi log thông tin bankName, cardHolderName, accountNumber vào bảng khác nếu cần sau này)
 
         await t.commit();
 
