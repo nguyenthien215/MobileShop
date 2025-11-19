@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaShoppingCart, FaStar, FaBox, FaTruck, FaHeadset } from 'react-icons/fa';
+import { FaShoppingCart, FaStar, FaBox, FaTruck, FaHeadset, FaCreditCard, FaPercent } from 'react-icons/fa';
 import Banner from '../components/Banner';
+import ChatBox from '../components/ChatBox';
+import MarqueePromo from '../components/MarqueePromo';
 import axiosInstance from '../api/axiosConfig';
 
 interface Product {
@@ -54,8 +56,11 @@ export default function Home() {
     const [laptops, setLaptops] = useState<Product[]>([]);
     const [accessories, setAccessories] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [bestSellers, setBestSellers] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingGroups, setLoadingGroups] = useState(true);
+    const [loadingBestSellers, setLoadingBestSellers] = useState(true);
+    const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
     // Fetch categories + featured
     useEffect(() => {
@@ -80,6 +85,62 @@ export default function Home() {
             }
         };
         fetchBase();
+    }, []);
+
+    // Fetch best sellers products
+    useEffect(() => {
+        const fetchBestSellers = async () => {
+            try {
+                const response = await axiosInstance.get('/products');
+                const allProducts = response.data.rows || [];
+
+                console.log('All products:', allProducts.map((p: any) => p.name));
+
+                // Tìm 2 sản phẩm theo tên (iPhone 16 Pro Max 1TB và MacBook Air 13" M4)
+                const iphone = allProducts.find((p: any) => {
+                    const name = p.name.toLowerCase();
+                    return (name.includes('iphone') && name.includes('16') &&
+                        name.includes('pro max') && name.includes('1tb'));
+                });
+
+                const macbook = allProducts.find((p: any) => {
+                    const name = p.name.toLowerCase();
+                    return (name.includes('macbook') && name.includes('air') &&
+                        name.includes('m4') && name.includes('13'));
+                });
+
+                const sellers: Product[] = [];
+                if (iphone) {
+                    console.log('iPhone found:', iphone.name);
+                    sellers.push({ ...iphone, images: normalizeImages(iphone.images) });
+                } else {
+                    console.log('iPhone NOT found');
+                }
+
+                if (macbook) {
+                    console.log('MacBook found:', macbook.name);
+                    sellers.push({ ...macbook, images: normalizeImages(macbook.images) });
+                } else {
+                    console.log('MacBook NOT found');
+                }
+
+                console.log('Best sellers final:', sellers.map(s => s.name));
+                setBestSellers(sellers);
+            } catch (err) {
+                console.error('Fetch best sellers error:', err);
+            } finally {
+                setLoadingBestSellers(false);
+            }
+        };
+        fetchBestSellers();
+    }, []);
+
+    // Auto change banner every 5 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentBannerIndex(prev => (prev === 0 ? 1 : 0));
+        }, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     // Fetch group products
@@ -120,7 +181,7 @@ export default function Home() {
     }, [categories]);
 
     const renderProductGrid = (title: string, items: Product[]) => (
-        <section className="max-w-7xl mx-auto px-4 py-10">
+        <section className="max-w-7xl mx-auto px-8 lg:px-16 py-10">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold">{title}</h2>
                 {items.length > 0 && (
@@ -194,6 +255,9 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
+            {/* Marquee Promo - Dòng chữ chạy */}
+            <MarqueePromo />
+
             {/* Banner */}
             <div className="max-w-7xl mx-auto px-4 py-6 w-full">
                 <Banner autoPlay interval={5000} />
@@ -219,7 +283,7 @@ export default function Home() {
             </section>
 
             {/* Danh mục sản phẩm (đưa lên trước Featured) */}
-            <section className="max-w-7xl mx-auto px-4 py-10">
+            <section className="max-w-7xl mx-auto px-8 lg:px-16 py-10">
                 <h2 className="text-3xl font-bold mb-8 text-center">Danh mục sản phẩm</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {categories.map(cat => (
@@ -247,8 +311,117 @@ export default function Home() {
                 </div>
             </section>
 
+            {/* Sản phẩm bán chạy nhất */}
+            <section className="max-w-7xl mx-auto px-8 lg:px-16 py-10">
+                <h2 className="text-3xl font-bold mb-8 text-center">Sản phẩm bán chạy nhất</h2>
+                {loadingBestSellers ? (
+                    <div className="text-center py-12">
+                        <p className="text-gray-600">Đang tải sản phẩm...</p>
+                    </div>
+                ) : bestSellers.length === 0 ? (
+                    <div className="text-center py-12">
+                        <p className="text-gray-500">Chưa có sản phẩm bán chạy</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* 2 Sản phẩm bên trái */}
+                        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {bestSellers.map(product => {
+                                const firstImg = product.images?.[0] || '';
+                                return (
+                                    <div
+                                        key={product.id}
+                                        className="bg-white rounded-lg shadow-md hover:shadow-xl transition overflow-hidden group"
+                                    >
+                                        <Link to={`/products/${product.id}`} className="block">
+                                            <div className="relative aspect-[4/3] bg-gray-100 flex items-center justify-center p-4">
+                                                <img
+                                                    src={firstImg ? getImageUrl(firstImg) : '/placeholder.png'}
+                                                    alt={product.name}
+                                                    className={IMAGE_CLASS}
+                                                    onError={e => { e.currentTarget.src = '/placeholder.png'; }}
+                                                />
+                                                {product.stock === 0 && (
+                                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                                        <span className="text-white font-bold">Hết hàng</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Link>
+                                        <div className="p-4">
+                                            <Link
+                                                to={`/products/${product.id}`}
+                                                className="font-bold text-lg text-gray-800 hover:text-blue-600 line-clamp-2 mb-3 block"
+                                            >
+                                                {product.name}
+                                            </Link>
+                                            <div className="flex items-center gap-1 mb-3">
+                                                {Array.from({ length: 5 }).map((_, i) => (
+                                                    <FaStar
+                                                        key={i}
+                                                        className={i < (product.rating || 5) ? 'text-yellow-400' : 'text-gray-300'}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className="text-2xl font-bold" style={{ color: '#2563eb' }}>
+                                                    {product.price.toLocaleString('vi-VN')} đ
+                                                </span>
+                                                <Link
+                                                    to={`/products/${product.id}`}
+                                                    className="text-white px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2"
+                                                    style={{ backgroundColor: '#00a63e' }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#008f35'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00a63e'}
+                                                >
+                                                    <FaShoppingCart />
+                                                    Mua ngay
+                                                </Link>
+                                            </div>
+                                            
+                                            {/* Thông tin trả góp */}
+                                            <div className="border-2 border-dashed border-blue-400 rounded-lg p-3 bg-white dark:bg-gray-800">
+                                                <div className="flex items-start gap-2 mb-2">
+                                                    <FaCreditCard className="text-blue-600 text-sm mt-0.5 shrink-0" />
+                                                    <p className="text-xs font-bold text-blue-900 dark:text-blue-100 leading-relaxed">
+                                                        Hỗ trợ Trả Góp 0% qua Thẻ Tín Dụng
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-start gap-2">
+                                                    <FaPercent className="text-green-600 text-sm mt-0.5 shrink-0" />
+                                                    <p className="text-xs font-bold text-black dark:text-white leading-relaxed line-clamp-2">
+                                                        Trả trước từ <span className="font-extrabold text-red-700">0%</span> giá trị máy, thời hạn từ <span className="font-extrabold text-red-700">6-8 tháng</span> (Click mua trả góp ngay)
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Banner dọc bên phải - Auto change */}
+                        <div className="lg:col-span-1">
+                            <div className="relative h-full min-h-[500px] rounded-lg overflow-hidden shadow-lg">
+                                <img
+                                    src={currentBannerIndex === 0
+                                        ? '/src/assets/img/banchay1.webp'
+                                        : '/src/assets/img/banchay2.webp'
+                                    }
+                                    alt={`Banner ${currentBannerIndex + 1}`}
+                                    className="w-full h-full object-cover transition-opacity duration-500"
+                                    onError={(e) => {
+                                        e.currentTarget.src = '/placeholder.png';
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </section>
+
             {/* Featured Products (ảnh thu nhỏ, không crop) */}
-            <section className="max-w-7xl mx-auto px-4 py-12">
+            <section className="max-w-7xl mx-auto px-8 lg:px-16 py-12">
                 <h2 className="text-3xl font-bold mb-8 text-center">Sản phẩm nổi bật</h2>
                 {loading ? (
                     <div className="text-center py-12">
@@ -306,10 +479,54 @@ export default function Home() {
                 )}
             </section>
 
+            {/* Gallery Banner Section - 3 ảnh bố cục */}
+            <section className="max-w-7xl mx-auto px-8 lg:px-16 py-10">
+                <div className="grid grid-cols-1 gap-4">
+                    {/* Ảnh ngang trên - bocuc2 */}
+                    <div className="w-full h-[250px] lg:h-[350px] overflow-hidden rounded-lg shadow-lg">
+                        <img
+                            src="/src/assets/img/bocuc2.webp"
+                            alt="Banner 2"
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            onError={(e) => {
+                                e.currentTarget.src = '/placeholder.png';
+                            }}
+                        />
+                    </div>
+
+                    {/* 2 ảnh dọc dưới - bocuc3 và bocuc4 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="h-[250px] lg:h-[350px] overflow-hidden rounded-lg shadow-lg">
+                            <img
+                                src="/src/assets/img/bocuc3.webp"
+                                alt="Banner 3"
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                onError={(e) => {
+                                    e.currentTarget.src = '/placeholder.png';
+                                }}
+                            />
+                        </div>
+                        <div className="h-[250px] lg:h-[350px] overflow-hidden rounded-lg shadow-lg">
+                            <img
+                                src="/src/assets/img/bocuc4.webp"
+                                alt="Banner 4"
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                onError={(e) => {
+                                    e.currentTarget.src = '/placeholder.png';
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Nhóm theo loại */}
             {renderProductGrid('Điện thoại', phones)}
             {renderProductGrid('Laptop', laptops)}
             {renderProductGrid('Phụ kiện', accessories)}
+
+            {/* Chat Support Box */}
+            <ChatBox />
         </div>
     );
 }
