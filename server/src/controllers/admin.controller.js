@@ -31,10 +31,17 @@ exports.getDashboardStats = async (req, res) => {
 // USERS
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.findAll({
-            attributes: ['id', 'name', 'email', 'role', 'createdAt']
+        const { page = 1, limit = 20 } = req.query;
+        const offset = (page - 1) * limit;
+
+        const result = await User.findAndCountAll({
+            attributes: ['id', 'name', 'email', 'role', 'createdAt'],
+            order: [['createdAt', 'DESC']],
+            offset: parseInt(offset),
+            limit: parseInt(limit)
         });
-        res.json(users);
+
+        res.json(result);
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server' });
     }
@@ -70,8 +77,16 @@ exports.deleteUser = async (req, res) => {
 // CATEGORIES
 exports.listCategories = async (req, res) => {
     try {
-        const rows = await Category.findAll({ order: [['createdAt', 'DESC']] });
-        res.json(rows);
+        const { page = 1, limit = 20 } = req.query;
+        const offset = (page - 1) * limit;
+
+        const result = await Category.findAndCountAll({
+            order: [['createdAt', 'DESC']],
+            offset: parseInt(offset),
+            limit: parseInt(limit)
+        });
+
+        res.json(result);
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server' });
     }
@@ -87,6 +102,9 @@ exports.createCategory = async (req, res) => {
         const cat = await Category.create({ name, slug: finalSlug, image });
         res.status(201).json({ message: 'Tạo danh mục thành công', category: cat });
     } catch (err) {
+        if (err.name === 'SequelizeUniqueConstraintError') {
+            return res.status(400).json({ message: 'Slug đã tồn tại' });
+        }
         res.status(500).json({ message: 'Lỗi server', error: err.message });
     }
 };
@@ -97,7 +115,6 @@ exports.updateCategory = async (req, res) => {
         const category = await Category.findByPk(req.params.id);
         if (!category) return res.status(404).json({ message: 'Không tìm thấy danh mục' });
         const finalSlug = slug || (name ? name.trim().toLowerCase().replace(/\s+/g, '-') : category.slug);
-        // Nếu đổi slug check trùng
         if (finalSlug !== category.slug) {
             const exists = await Category.findOne({ where: { slug: finalSlug } });
             if (exists) return res.status(400).json({ message: 'Slug đã tồn tại' });
@@ -137,6 +154,12 @@ exports.listProducts = async (req, res) => {
             offset: (page - 1) * limit,
             limit: parseInt(limit)
         });
+        // Debug log
+        if (result.rows.length > 0) {
+            console.log('[Admin listProducts] Sample product images:', result.rows[0].images);
+            console.log('[Admin listProducts] Images type:', typeof result.rows[0].images);
+            console.log('[Admin listProducts] Is array:', Array.isArray(result.rows[0].images));
+        }
         res.json(result);
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server' });
@@ -146,6 +169,9 @@ exports.listProducts = async (req, res) => {
 exports.createProduct = async (req, res) => {
     try {
         const { name, slug, description, price, stock, images, specs, brand, categoryId } = req.body;
+        console.log('[Admin createProduct] Received images:', images);
+        console.log('[Admin createProduct] Images type:', typeof images);
+        console.log('[Admin createProduct] Is array:', Array.isArray(images));
         if (!name || !price || !categoryId) return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc' });
         const finalSlug = slug || name.trim().toLowerCase().replace(/\s+/g, '-');
         const exists = await Product.findOne({ where: { slug: finalSlug } });
@@ -161,6 +187,7 @@ exports.createProduct = async (req, res) => {
             brand,
             categoryId
         });
+        console.log('[Admin createProduct] Created product images:', product.images);
         res.status(201).json({ message: 'Tạo sản phẩm thành công', product });
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server', error: err.message });
@@ -199,14 +226,24 @@ exports.deleteProduct = async (req, res) => {
 // ORDERS
 exports.listOrders = async (req, res) => {
     try {
-        const orders = await Order.findAll({
+        const { page = 1, limit = 20 } = req.query;
+        const offset = (page - 1) * limit;
+
+        const result = await Order.findAndCountAll({
             include: [
                 { model: OrderItem, as: 'items', include: [Product] },
                 { model: Payment, as: 'payment' }
             ],
-            order: [['createdAt', 'DESC']]
+            order: [['createdAt', 'DESC']],
+            offset: parseInt(offset),
+            limit: parseInt(limit)
         });
-        res.json(orders);
+
+        console.log('[Admin listOrders] Page:', page, 'Limit:', limit);
+        console.log('[Admin listOrders] Total count:', result.count);
+        console.log('[Admin listOrders] Rows returned:', result.rows.length);
+
+        res.json(result);
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server' });
     }
@@ -236,14 +273,20 @@ exports.updateOrderStatus = async (req, res) => {
 // REVIEWS
 exports.listReviews = async (req, res) => {
     try {
-        const reviews = await Review.findAll({
+        const { page = 1, limit = 20 } = req.query;
+        const offset = (page - 1) * limit;
+
+        const result = await Review.findAndCountAll({
             include: [
                 { model: User, attributes: ['id', 'name', 'email'] },
                 { model: Product, attributes: ['id', 'name'] }
             ],
-            order: [['createdAt', 'DESC']]
+            order: [['createdAt', 'DESC']],
+            offset: parseInt(offset),
+            limit: parseInt(limit)
         });
-        res.json(reviews);
+
+        res.json(result);
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server' });
     }
@@ -263,11 +306,17 @@ exports.deleteReview = async (req, res) => {
 // PAYMENTS
 exports.listPayments = async (req, res) => {
     try {
-        const payments = await Payment.findAll({
+        const { page = 1, limit = 20 } = req.query;
+        const offset = (page - 1) * limit;
+
+        const result = await Payment.findAndCountAll({
             include: [{ model: Order, attributes: ['id', 'orderNumber', 'paymentMethod', 'status'] }],
-            order: [['createdAt', 'DESC']]
+            order: [['createdAt', 'DESC']],
+            offset: parseInt(offset),
+            limit: parseInt(limit)
         });
-        res.json(payments);
+
+        res.json(result);
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server' });
     }

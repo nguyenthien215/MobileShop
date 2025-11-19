@@ -16,11 +16,39 @@ interface Product {
     createdAt: string;
 }
 
+// Helper to normalize image array from database
+const normalizeImages = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+    return [];
+};
+
+// Helper to normalize image URLs
+const getImageUrl = (path?: string) => {
+    if (!path) return '/placeholder.png';
+    const clean = path.startsWith('/') ? path : '/' + path;
+    return `${import.meta.env.VITE_API_URL}${clean}`;
+};
+
 export default function Products() {
     const [rows, setRows] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState<Product | null>(null);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalProducts, setTotalProducts] = useState(0);
+    const itemsPerPage = 5;
 
     // form
     const [name, setName] = useState('');
@@ -30,25 +58,61 @@ export default function Products() {
     const [categoryId, setCategoryId] = useState('');
     const [images, setImages] = useState<string[]>([]);
 
-    const load = async () => {
+    const load = async (page = 1) => {
         setLoading(true);
         try {
             const [prodRes, catRes] = await Promise.all([
-                axiosInstance.get('/admin/products'),
-                axiosInstance.get('/admin/categories')
+                axiosInstance.get('/admin/products', {
+                    params: { page, limit: itemsPerPage }
+                }),
+                axiosInstance.get('/admin/categories', {
+                    params: { limit: 100 } // Get all categories for dropdown
+                })
             ]);
-            setRows(prodRes.data.rows || prodRes.data.products || prodRes.data);
-            setCategories(catRes.data);
+            const result = prodRes.data;
+            const products = result.rows || result.products || result;
+            console.log('[Products] Raw data sample:', products[0]);
+            // Normalize images for all products
+            const normalized = products.map((p: Product) => ({
+                ...p,
+                images: normalizeImages(p.images)
+            }));
+            console.log('[Products] Normalized sample:', normalized[0]);
+            setRows(normalized);
+
+            // Handle categories - backend now returns { count, rows }
+            const categoriesData = catRes.data;
+            const categoriesArray = categoriesData.rows || categoriesData;
+            setCategories(categoriesArray);
+
+            // Set pagination info
+            setTotalProducts(result.count || products.length);
+            setTotalPages(Math.ceil((result.count || products.length) / itemsPerPage));
+            setCurrentPage(page);
         } finally { setLoading(false); }
     };
 
     useEffect(() => { load(); }, []);
 
     const uploadMulti = async (files: FileList) => {
-        const fd = new FormData();
-        Array.from(files).forEach(f => fd.append('images', f));
-        const res = await axiosInstance.post('/upload/products/multiple', fd);
-        setImages(res.data.imageUrls);
+        try {
+            const fd = new FormData();
+            Array.from(files).forEach(f => fd.append('images', f));
+            console.log('[Upload] Uploading', files.length, 'files');
+            // Don't set Content-Type, let browser set it with boundary
+            const res = await axiosInstance.post('/upload/products/multiple', fd, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                },
+                transformRequest: [(data) => data] // Prevent axios from transforming FormData
+            });
+            console.log('[Upload] Response:', res.data);
+            console.log('[Upload] Image URLs:', res.data.imageUrls);
+            setImages(res.data.imageUrls);
+        } catch (error: any) {
+            console.error('[Upload] Error:', error.response?.data || error.message);
+            alert('Upload ảnh thất bại: ' + (error.response?.data?.message || error.message));
+        }
     };
 
     const resetForm = () => {
@@ -58,7 +122,7 @@ export default function Products() {
 
     const submit = async () => {
         if (!name || !price || !categoryId) return;
-        await axiosInstance.post('/admin/products', {
+        const payload = {
             name,
             slug: makeSlug(name),
             price,
@@ -66,9 +130,12 @@ export default function Products() {
             brand,
             categoryId,
             images
-        });
+        };
+        console.log('[Submit] Creating product with payload:', payload);
+        const res = await axiosInstance.post('/admin/products', payload);
+        console.log('[Submit] Product created:', res.data);
         resetForm();
-        await load();
+        await load(1); // Load first page after creating new product
     };
 
     const startEdit = (p: Product) => {
@@ -78,7 +145,7 @@ export default function Products() {
         setStock(p.stock);
         setBrand(p.brand || '');
         setCategoryId(p.categoryId);
-        setImages(Array.isArray(p.images) ? p.images : []);
+        setImages(normalizeImages(p.images));
     };
 
     const submitEdit = async () => {
@@ -93,13 +160,18 @@ export default function Products() {
             images
         });
         resetForm();
-        await load();
+        await load(currentPage);
     };
 
     const remove = async (id: string) => {
         if (!confirm('Xóa sản phẩm?')) return;
         await axiosInstance.delete(`/admin/products/${id}`);
-        await load();
+        // If last item on page and not first page, go to previous page
+        if (rows.length === 1 && currentPage > 1) {
+            await load(currentPage - 1);
+        } else {
+            await load(currentPage);
+        }
     };
 
     return (
@@ -121,7 +193,7 @@ export default function Products() {
                 </div>
                 {images.length > 0 && (
                     <div className="flex gap-2 flex-wrap">
-                        {images.map((img, i) => <img key={i} src={img} className="h-16 w-16 object-contain border" />)}
+                        {images.map((img, i) => <img key={i} src={getImageUrl(img)} className="h-16 w-16 object-contain border" alt={`Preview ${i + 1}`} />)}
                     </div>
                 )}
                 <div className="flex gap-3">
@@ -152,11 +224,11 @@ export default function Products() {
                         </thead>
                         <tbody>
                             {rows.map(p => {
-                                const first = Array.isArray(p.images) ? p.images[0] : '';
+                                const first = (p.images as string[])[0] || '';
                                 return (
                                     <tr key={p.id} className="border-t dark:border-gray-600">
                                         <td className="p-2">
-                                            {first ? <img src={first} className="h-14 w-14 object-contain" /> : '—'}
+                                            {first ? <img src={getImageUrl(first)} className="h-14 w-14 object-contain" alt={p.name} /> : '—'}
                                         </td>
                                         <td className="p-2">{p.name}</td>
                                         <td className="p-2">{p.price.toLocaleString('vi-VN')} đ</td>
@@ -172,6 +244,49 @@ export default function Products() {
                             })}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* Pagination */}
+            {!loading && totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-6">
+                    <button
+                        onClick={() => load(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 dark:hover:bg-gray-500"
+                    >
+                        Trang trước
+                    </button>
+
+                    <div className="flex gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <button
+                                key={page}
+                                onClick={() => load(page)}
+                                className={`px-3 py-2 rounded ${currentPage === page
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500'
+                                    }`}
+                            >
+                                {page}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={() => load(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 dark:hover:bg-gray-500"
+                    >
+                        Trang sau
+                    </button>
+                </div>
+            )}
+
+            {/* Total count */}
+            {!loading && totalProducts > 0 && (
+                <div className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
+                    Hiển thị {rows.length} / {totalProducts} sản phẩm (Trang {currentPage}/{totalPages})
                 </div>
             )}
         </div>

@@ -58,6 +58,7 @@ export default function ProductDetail() {
     const [authWarning, setAuthWarning] = useState('');
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
     // Review-related state
     const [reviews, setReviews] = useState<Review[]>([]);
@@ -179,18 +180,46 @@ export default function ProductDetail() {
     if (!product)
         return <div className="max-w-5xl mx-auto px-4 py-12 text-center text-gray-500">Không tìm thấy sản phẩm</div>;
 
-    const first = (product.images as string[])[0] || '';
+    const images = (product.images as string[]) || [];
+    const currentImage = images[selectedImageIndex] || '';
 
     return (
         <div className="max-w-5xl mx-auto px-4 py-10">
             <div className="grid md:grid-cols-2 gap-8">
-                <div className="bg-white rounded-lg shadow p-4 flex items-center justify-center aspect-[4/3]">
-                    <img
-                        src={first ? getImageUrl(first) : '/placeholder.png'}
-                        alt={product.name}
-                        className="w-full h-full object-contain"
-                        onError={e => { e.currentTarget.src = '/placeholder.png'; }}
-                    />
+                {/* Image Gallery */}
+                <div className="flex flex-col gap-4">
+                    {/* Main Image */}
+                    <div className="bg-white rounded-lg shadow p-4 flex items-center justify-center aspect-[4/3]">
+                        <img
+                            src={currentImage ? getImageUrl(currentImage) : '/placeholder.png'}
+                            alt={product.name}
+                            className="w-full h-full object-contain"
+                            onError={e => { e.currentTarget.src = '/placeholder.png'; }}
+                        />
+                    </div>
+
+                    {/* Thumbnails */}
+                    {images.length > 1 && (
+                        <div className="flex gap-2 overflow-x-auto">
+                            {images.map((img, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setSelectedImageIndex(index)}
+                                    className={`flex-shrink-0 w-20 h-20 rounded border-2 overflow-hidden transition ${index === selectedImageIndex
+                                        ? 'border-blue-600'
+                                        : 'border-gray-300 hover:border-gray-400'
+                                        }`}
+                                >
+                                    <img
+                                        src={getImageUrl(img)}
+                                        alt={`${product.name} - ${index + 1}`}
+                                        className="w-full h-full object-contain bg-gray-50"
+                                        onError={e => { e.currentTarget.src = '/placeholder.png'; }}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 <div className="flex flex-col gap-4">
                     <h1 className="text-3xl font-bold">{product.name}</h1>

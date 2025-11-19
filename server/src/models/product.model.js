@@ -30,6 +30,20 @@ const Product = sequelize.define('Product', {
     },
     images: {
         type: DataTypes.JSON,
+        get() {
+            const rawValue = this.getDataValue('images');
+            if (!rawValue) return [];
+            if (Array.isArray(rawValue)) return rawValue;
+            if (typeof rawValue === 'string') {
+                try {
+                    const parsed = JSON.parse(rawValue);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch {
+                    return [];
+                }
+            }
+            return [];
+        }
     },
     specs: {
         type: DataTypes.JSON,
