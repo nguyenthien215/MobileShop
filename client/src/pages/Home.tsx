@@ -57,9 +57,11 @@ export default function Home() {
     const [accessories, setAccessories] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [bestSellers, setBestSellers] = useState<Product[]>([]);
+    const [reviewProducts, setReviewProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingGroups, setLoadingGroups] = useState(true);
     const [loadingBestSellers, setLoadingBestSellers] = useState(true);
+    const [loadingReviews, setLoadingReviews] = useState(true);
     const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
     // Fetch categories + featured
@@ -141,6 +143,39 @@ export default function Home() {
             setCurrentBannerIndex(prev => (prev === 0 ? 1 : 0));
         }, 5000);
         return () => clearInterval(interval);
+    }, []);
+
+    // Fetch review products (iPhone 16 Pro Max 1TB và iPhone 14 Pro Max 1TB)
+    useEffect(() => {
+        const fetchReviewProducts = async () => {
+            try {
+                const response = await axiosInstance.get('/products');
+                const allProducts = response.data.rows || [];
+
+                const iphone16 = allProducts.find((p: any) => {
+                    const name = p.name.toLowerCase();
+                    return (name.includes('iphone') && name.includes('16') &&
+                        name.includes('pro max') && name.includes('1tb'));
+                });
+
+                const iphone14 = allProducts.find((p: any) => {
+                    const name = p.name.toLowerCase();
+                    return (name.includes('iphone') && name.includes('14') &&
+                        name.includes('pro max') && name.includes('1tb'));
+                });
+
+                const reviews: Product[] = [];
+                if (iphone16) reviews.push({ ...iphone16, images: normalizeImages(iphone16.images) });
+                if (iphone14) reviews.push({ ...iphone14, images: normalizeImages(iphone14.images) });
+
+                setReviewProducts(reviews);
+            } catch (err) {
+                console.error('Fetch review products error:', err);
+            } finally {
+                setLoadingReviews(false);
+            }
+        };
+        fetchReviewProducts();
     }, []);
 
     // Fetch group products
@@ -378,7 +413,7 @@ export default function Home() {
                                                     Mua ngay
                                                 </Link>
                                             </div>
-                                            
+
                                             {/* Thông tin trả góp */}
                                             <div className="border-2 border-dashed border-blue-400 rounded-lg p-3 bg-white dark:bg-gray-800">
                                                 <div className="flex items-start gap-2 mb-2">
@@ -524,6 +559,182 @@ export default function Home() {
             {renderProductGrid('Điện thoại', phones)}
             {renderProductGrid('Laptop', laptops)}
             {renderProductGrid('Phụ kiện', accessories)}
+
+            {/* Reviews Section - Video với sản phẩm */}
+            <section className="max-w-7xl mx-auto px-4 py-10">
+                <h2 className="text-3xl font-bold mb-8 text-center">Reviews</h2>
+                {loadingReviews ? (
+                    <div className="text-center py-12">
+                        <p className="text-gray-600">Đang tải...</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Video 1 + iPhone 16 Pro Max */}
+                        <div className="flex flex-col gap-4">
+                            {/* Video 1 */}
+                            <div className="w-full rounded-lg overflow-hidden shadow-lg bg-black">
+                                <video
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
+                                    className="w-full h-[300px] lg:h-[400px] object-cover"
+                                >
+                                    <source src="/src/assets/img/video1.mp4" type="video/mp4" />
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+
+                            {/* Sản phẩm iPhone 16 Pro Max */}
+                            {reviewProducts[0] && (
+                                <Link
+                                    to={`/products/${reviewProducts[0].id}`}
+                                    className="bg-white rounded-lg shadow-md hover:shadow-xl transition overflow-hidden block"
+                                >
+                                    <div className="p-3">
+                                        <div className="flex gap-3 mb-3">
+                                            {/* Ảnh sản phẩm */}
+                                            <div className="w-24 h-24 shrink-0">
+                                                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                                    <img
+                                                        src={reviewProducts[0].images?.[0] ? getImageUrl(reviewProducts[0].images[0]) : '/placeholder.png'}
+                                                        alt={reviewProducts[0].name}
+                                                        className="w-full h-full object-contain hover:scale-110 transition-transform duration-300"
+                                                        onError={e => { e.currentTarget.src = '/placeholder.png'; }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Thông tin sản phẩm */}
+                                            <div className="flex-1 flex flex-col">
+                                                <h3 className="font-bold text-sm text-gray-800 line-clamp-2 mb-2">
+                                                    {reviewProducts[0].name}
+                                                </h3>
+                                                <div className="flex items-center gap-1 mb-2">
+                                                    {Array.from({ length: 5 }).map((_, i) => (
+                                                        <FaStar
+                                                            key={i}
+                                                            className={i < (reviewProducts[0].rating || 5) ? 'text-yellow-400 text-xs' : 'text-gray-300 text-xs'}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Thông tin trả góp - ở giữa */}
+                                        <div className="border-2 border-dashed border-blue-400 rounded-lg p-2 mb-3 bg-blue-50 dark:bg-gray-800">
+                                            <div className="flex items-start gap-2 mb-1">
+                                                <FaCreditCard className="text-blue-600 text-xs mt-0.5 shrink-0" />
+                                                <p className="text-xs font-bold text-blue-900 dark:text-blue-100 leading-relaxed">
+                                                    Hỗ trợ Trả Góp 0% qua Thẻ Tín Dụng
+                                                </p>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <FaPercent className="text-green-600 text-xs mt-0.5 shrink-0" />
+                                                <p className="text-xs font-bold text-black dark:text-white leading-relaxed line-clamp-2">
+                                                    Trả trước từ <span className="font-extrabold text-red-700">0%</span> giá trị máy, thời hạn từ <span className="font-extrabold text-red-700">6-8 tháng</span>
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Giá và nút */}
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-lg font-bold" style={{ color: '#2563eb' }}>
+                                                {reviewProducts[0].price.toLocaleString('vi-VN')} đ
+                                            </span>
+                                            <span className="text-xs bg-red-600 text-white px-3 py-1.5 rounded font-semibold">
+                                                Xem ngay
+                                            </span>
+                                        </div>
+                                    </div>
+                                </Link>
+                            )}
+                        </div>
+
+                        {/* Video 2 + iPhone 14 Pro Max */}
+                        <div className="flex flex-col gap-4">
+                            {/* Video 2 */}
+                            <div className="w-full rounded-lg overflow-hidden shadow-lg bg-black">
+                                <video
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
+                                    className="w-full h-[300px] lg:h-[400px] object-cover"
+                                >
+                                    <source src="/src/assets/img/video2.mp4" type="video/mp4" />
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+
+                            {/* Sản phẩm iPhone 14 Pro Max */}
+                            {reviewProducts[1] && (
+                                <Link
+                                    to={`/products/${reviewProducts[1].id}`}
+                                    className="bg-white rounded-lg shadow-md hover:shadow-xl transition overflow-hidden block"
+                                >
+                                    <div className="p-3">
+                                        <div className="flex gap-3 mb-3">
+                                            {/* Ảnh sản phẩm */}
+                                            <div className="w-24 h-24 shrink-0">
+                                                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                                    <img
+                                                        src={reviewProducts[1].images?.[0] ? getImageUrl(reviewProducts[1].images[0]) : '/placeholder.png'}
+                                                        alt={reviewProducts[1].name}
+                                                        className="w-full h-full object-contain hover:scale-110 transition-transform duration-300"
+                                                        onError={e => { e.currentTarget.src = '/placeholder.png'; }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Thông tin sản phẩm */}
+                                            <div className="flex-1 flex flex-col">
+                                                <h3 className="font-bold text-sm text-gray-800 line-clamp-2 mb-2">
+                                                    {reviewProducts[1].name}
+                                                </h3>
+                                                <div className="flex items-center gap-1 mb-2">
+                                                    {Array.from({ length: 5 }).map((_, i) => (
+                                                        <FaStar
+                                                            key={i}
+                                                            className={i < (reviewProducts[1].rating || 5) ? 'text-yellow-400 text-xs' : 'text-gray-300 text-xs'}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Thông tin trả góp - ở giữa */}
+                                        <div className="border-2 border-dashed border-blue-400 rounded-lg p-2 mb-3 bg-blue-50 dark:bg-gray-800">
+                                            <div className="flex items-start gap-2 mb-1">
+                                                <FaCreditCard className="text-blue-600 text-xs mt-0.5 shrink-0" />
+                                                <p className="text-xs font-bold text-blue-900 dark:text-blue-100 leading-relaxed">
+                                                    Hỗ trợ Trả Góp 0% qua Thẻ Tín Dụng
+                                                </p>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <FaPercent className="text-green-600 text-xs mt-0.5 shrink-0" />
+                                                <p className="text-xs font-bold text-black dark:text-white leading-relaxed line-clamp-2">
+                                                    Trả trước từ <span className="font-extrabold text-red-700">0%</span> giá trị máy, thời hạn từ <span className="font-extrabold text-red-700">6-8 tháng</span>
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Giá và nút */}
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-lg font-bold" style={{ color: '#2563eb' }}>
+                                                {reviewProducts[1].price.toLocaleString('vi-VN')} đ
+                                            </span>
+                                            <span className="text-xs bg-red-600 text-white px-3 py-1.5 rounded font-semibold">
+                                                Xem ngay
+                                            </span>
+                                        </div>
+                                    </div>
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </section>
 
             {/* Chat Support Box */}
             <ChatBox />
