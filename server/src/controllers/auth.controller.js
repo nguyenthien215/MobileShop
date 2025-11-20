@@ -19,7 +19,7 @@ exports.register = async (req, res) => {
         const token = generateToken(user);
         return res.status(201).json({
             message: "Đăng ký thành công",
-            user: { id: user.id, name: user.name, email: user.email, role: user.role },
+            user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar },
             token
         });
     } catch (err) {
@@ -40,7 +40,7 @@ exports.login = async (req, res) => {
         const token = generateToken(user);
         return res.json({
             message: "Đăng nhập thành công",
-            user: { id: user.id, name: user.name, email: user.email, role: user.role },
+            user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar },
             token
         });
     } catch (err) {

@@ -13,6 +13,7 @@ const path = require('path');
 const uploadRoutes = require('./src/routes/upload.routes');
 const orderRoutes = require("./src/routes/order.routes");
 const cartRoutes = require('./src/routes/cart.routes');
+const userRoutes = require('./src/routes/user.routes');
 
 
 const app = express();
@@ -52,6 +53,8 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/cart', cartRoutes);
 
 app.use("/api/orders", orderRoutes);
+
+app.use('/api/user', userRoutes);
 
 sequelize
   .authenticate()

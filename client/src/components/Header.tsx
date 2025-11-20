@@ -10,7 +10,8 @@ import {
     FaHeadphones,
     FaHome,
     FaMoon,
-    FaSun
+    FaSun,
+    FaUserCircle
 } from 'react-icons/fa';
 import { useAuthStore } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
@@ -118,6 +119,15 @@ export default function Header() {
                                     aria-haspopup="true"
                                     aria-expanded={userMenuOpen}
                                 >
+                                    {user.avatar ? (
+                                        <img
+                                            src={`http://localhost:5000${user.avatar}`}
+                                            alt={user.name}
+                                            className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                                        />
+                                    ) : (
+                                        <FaUserCircle size={32} className="text-white" />
+                                    )}
                                     <span className="text-sm font-semibold">Xin chào {user.name}!</span>
                                 </button>
                                 {userMenuOpen && (
@@ -135,6 +145,14 @@ export default function Header() {
                                                 Trang Admin
                                             </Link>
                                         )}
+                                        <Link
+                                            to="/account-settings"
+                                            onClick={() => setUserMenuOpen(false)}
+                                            className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-[var(--border)] text-sm"
+                                            role="menuitem"
+                                        >
+                                            Thông tin tài khoản
+                                        </Link>
                                         <Link
                                             to="/orders"
                                             onClick={() => setUserMenuOpen(false)}

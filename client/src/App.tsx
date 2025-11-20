@@ -9,6 +9,7 @@ import Checkout from './pages/Checkout';
 import OrderHistory from './pages/OrderHistory';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import AccountSettings from './pages/AccountSettings';
 import Orders from './pages/Orders';
 import OrdersMulti from './pages/OrdersMulti';
 import Dashboard from './pages/admin/Dashboard';
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/orders" element={<OrderHistory />} />
           <Route path="/orders/create/:productId" element={<Orders />} />
           <Route path="/orders/checkout" element={<OrdersMulti />} />
+          <Route path="/account-settings" element={<RequireAuth><AccountSettings /></RequireAuth>} />
         </Route>
 
         {/* Admin Layout Routes */}
