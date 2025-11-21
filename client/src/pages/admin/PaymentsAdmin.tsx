@@ -52,7 +52,7 @@ export default function PaymentsAdmin() {
                 <div className="overflow-x-auto bg-white dark:bg-[var(--card)] rounded shadow">
                     <table className="min-w-full text-xs">
                         <thead>
-                            <tr className="bg-gray-100 dark:bg-gray-700">
+                            <tr className="bg-gray-100 dark:bg-gray-500">
                                 <th className="p-2">Đơn hàng</th>
                                 <th className="p-2">Phương thức</th>
                                 <th className="p-2">Số tiền</th>
@@ -104,8 +104,8 @@ export default function PaymentsAdmin() {
                                 key={page}
                                 onClick={() => load(page)}
                                 className={`px-3 py-2 rounded ${currentPage === page
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500'
                                     }`}
                             >
                                 {page}

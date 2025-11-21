@@ -22,6 +22,7 @@ interface Review {
     productId: string;
     rating: number;
     comment: string;
+    adminReply?: string | null;
     createdAt: string;
     User?: { id: string; name: string };
 }
@@ -347,6 +348,16 @@ export default function ProductDetail() {
                                     <span className="text-sm ml-2">{r.rating} / 5</span>
                                 </div>
                                 {r.comment && <p className="text-sm text-gray-700 whitespace-pre-line">{r.comment}</p>}
+
+                                {/* Phản hồi của Admin */}
+                                {r.adminReply && (
+                                    <div className="mt-3 ml-6 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-xs font-semibold text-blue-700">Phản hồi từ Admin</span>
+                                        </div>
+                                        <p className="text-sm text-gray-700 whitespace-pre-line">{r.adminReply}</p>
+                                    </div>
+                                )}
                             </li>
                         ))}
                     </ul>

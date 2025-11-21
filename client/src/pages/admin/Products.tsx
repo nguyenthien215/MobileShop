@@ -108,7 +108,9 @@ export default function Products() {
             });
             console.log('[Upload] Response:', res.data);
             console.log('[Upload] Image URLs:', res.data.imageUrls);
-            setImages(res.data.imageUrls);
+
+            // Thêm ảnh mới vào mảng hiện có thay vì thay thế
+            setImages(prev => [...prev, ...res.data.imageUrls]);
         } catch (error: any) {
             console.error('[Upload] Error:', error.response?.data || error.message);
             alert('Upload ảnh thất bại: ' + (error.response?.data?.message || error.message));
@@ -181,7 +183,7 @@ export default function Products() {
             <div className="bg-white dark:bg-[var(--card)] p-5 rounded shadow space-y-4">
                 <h2 className="font-semibold">{editing ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
-                    <input value={name} onChange={e => setName(e.target.value)} placeholder="Tên" className="px-3 py-2 border rounded dark:bg-[var(--card)]" />
+                    <input value={name} onChange={e => setName(e.target.value)} placeholder="Tên sản phẩm" className="px-3 py-2 border rounded dark:bg-[var(--card)]" />
                     <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))} placeholder="Giá" className="px-3 py-2 border rounded dark:bg-[var(--card)]" />
                     <input type="number" value={stock} onChange={e => setStock(Number(e.target.value))} placeholder="Tồn kho" className="px-3 py-2 border rounded dark:bg-[var(--card)]" />
                     <input value={brand} onChange={e => setBrand(e.target.value)} placeholder="Thương hiệu" className="px-3 py-2 border rounded dark:bg-[var(--card)]" />
@@ -189,21 +191,108 @@ export default function Products() {
                         <option value="">--Chọn danh mục--</option>
                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
-                    <input type="file" multiple onChange={e => e.target.files && uploadMulti(e.target.files)} className="text-sm" />
                 </div>
+
+                {/* Upload Images Section */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Ảnh sản phẩm (tối đa 5 ảnh)
+                    </label>
+                    <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={e => e.target.files && uploadMulti(e.target.files)}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    <p className="text-xs text-gray-500">
+                        • Ảnh đầu tiên sẽ hiển thị làm ảnh chính<br />
+                        • Click vào sản phẩm để xem tất cả ảnh<br />
+                        • Có thể chọn 1 hoặc nhiều ảnh cùng lúc
+                    </p>
+                </div>
+
                 {images.length > 0 && (
-                    <div className="flex gap-2 flex-wrap">
-                        {images.map((img, i) => <img key={i} src={getImageUrl(img)} className="h-16 w-16 object-contain border" alt={`Preview ${i + 1}`} />)}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Xem trước ({images.length} ảnh) - Kéo thả để sắp xếp
+                        </label>
+                        <div className="flex gap-3 flex-wrap">
+                            {images.map((img, i) => (
+                                <div key={i} className="relative group">
+                                    <img
+                                        src={getImageUrl(img)}
+                                        className="h-24 w-24 object-cover border-2 border-gray-300 rounded cursor-move"
+                                        alt={`Preview ${i + 1}`}
+                                        draggable
+                                        onDragStart={(e) => {
+                                            e.dataTransfer.effectAllowed = 'move';
+                                            e.dataTransfer.setData('text/plain', i.toString());
+                                        }}
+                                        onDragOver={(e) => {
+                                            e.preventDefault();
+                                            e.dataTransfer.dropEffect = 'move';
+                                        }}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                                            if (fromIndex !== i) {
+                                                const newImages = [...images];
+                                                const [movedImage] = newImages.splice(fromIndex, 1);
+                                                newImages.splice(i, 0, movedImage);
+                                                setImages(newImages);
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setImages(images.filter((_, idx) => idx !== i))}
+                                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition hover:bg-red-700"
+                                        title="Xóa ảnh này"
+                                    >
+                                        ×
+                                    </button>
+                                    {i === 0 ? (
+                                        <span className="absolute bottom-0 left-0 right-0 bg-blue-600 text-white text-xs py-0.5 text-center font-semibold">
+                                            Ảnh chính
+                                        </span>
+                                    ) : (
+                                        <span className="absolute bottom-0 left-0 right-0 bg-gray-600 text-white text-xs py-0.5 text-center">
+                                            Ảnh phụ {i}
+                                        </span>
+                                    )}
+                                    {i > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newImages = [...images];
+                                                const [movedImage] = newImages.splice(i, 1);
+                                                newImages.unshift(movedImage);
+                                                setImages(newImages);
+                                            }}
+                                            className="absolute top-0 left-0 bg-green-600 text-white rounded px-2 py-0.5 text-xs font-bold opacity-0 group-hover:opacity-100 transition hover:bg-green-700"
+                                            title="Đặt làm ảnh chính"
+                                        >
+                                            ⭐
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-xs text-gray-500 italic">
+                            💡 Kéo thả ảnh để sắp xếp lại hoặc click ⭐ để đặt làm ảnh chính
+                        </p>
                     </div>
                 )}
+
                 <div className="flex gap-3">
                     {editing ? (
                         <>
-                            <button onClick={submitEdit} className="px-4 py-2 bg-green-600 text-white rounded">Lưu</button>
-                            <button onClick={resetForm} className="px-4 py-2 bg-gray-300 dark:bg-gray-600 rounded">Hủy</button>
+                            <button onClick={submitEdit} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Lưu thay đổi</button>
+                            <button onClick={resetForm} className="px-4 py-2 bg-gray-300 dark:bg-gray-600 rounded hover:bg-gray-400">Hủy</button>
                         </>
                     ) : (
-                        <button onClick={submit} className="px-4 py-2 bg-blue-600 text-white rounded">Thêm</button>
+                        <button onClick={submit} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Thêm sản phẩm</button>
                     )}
                 </div>
             </div>
@@ -212,7 +301,7 @@ export default function Products() {
                 <div className="overflow-x-auto bg-white dark:bg-[var(--card)] rounded shadow">
                     <table className="min-w-full text-xs">
                         <thead>
-                            <tr className="bg-gray-100 dark:bg-gray-700">
+                            <tr className="bg-gray-100 dark:bg-gray-500">
                                 <th className="p-2">Ảnh</th>
                                 <th className="p-2">Tên</th>
                                 <th className="p-2">Giá</th>
@@ -224,11 +313,41 @@ export default function Products() {
                         </thead>
                         <tbody>
                             {rows.map(p => {
-                                const first = (p.images as string[])[0] || '';
+                                const productImages = (p.images as string[]) || [];
                                 return (
                                     <tr key={p.id} className="border-t dark:border-gray-600">
                                         <td className="p-2">
-                                            {first ? <img src={getImageUrl(first)} className="h-14 w-14 object-contain" alt={p.name} /> : '—'}
+                                            {productImages.length > 0 ? (
+                                                <div className="flex gap-1">
+                                                    <img
+                                                        src={getImageUrl(productImages[0])}
+                                                        className="h-14 w-14 object-cover rounded border-2 border-blue-500"
+                                                        alt={p.name}
+                                                        title="Ảnh chính"
+                                                    />
+                                                    {productImages.length > 1 && (
+                                                        <div className="flex flex-col gap-1">
+                                                            {productImages.slice(1, 3).map((img, idx) => (
+                                                                <img
+                                                                    key={idx}
+                                                                    src={getImageUrl(img)}
+                                                                    className="h-6 w-6 object-cover rounded border"
+                                                                    alt={`${p.name} ${idx + 2}`}
+                                                                />
+                                                            ))}
+                                                            {productImages.length > 3 && (
+                                                                <div className="h-6 w-6 bg-gray-200 dark:bg-gray-700 rounded border flex items-center justify-center text-xs font-bold">
+                                                                    +{productImages.length - 3}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="h-14 w-14 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center text-xs">
+                                                    No img
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="p-2">{p.name}</td>
                                         <td className="p-2">{p.price.toLocaleString('vi-VN')} đ</td>
@@ -236,8 +355,8 @@ export default function Products() {
                                         <td className="p-2">{p.Category?.name || '—'}</td>
                                         <td className="p-2">{new Date(p.createdAt).toLocaleDateString('vi-VN')}</td>
                                         <td className="p-2 flex gap-2">
-                                            <button onClick={() => startEdit(p)} className="px-2 py-1 bg-blue-600 text-white rounded">Sửa</button>
-                                            <button onClick={() => remove(p.id)} className="px-2 py-1 bg-red-600 text-white rounded">Xóa</button>
+                                            <button onClick={() => startEdit(p)} className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">Sửa</button>
+                                            <button onClick={() => remove(p.id)} className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700">Xóa</button>
                                         </td>
                                     </tr>
                                 );

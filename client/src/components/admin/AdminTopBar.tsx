@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuthStore } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { FaSun, FaMoon, FaSignOutAlt, FaHome } from 'react-icons/fa';
+import { FaSun, FaMoon, FaSignOutAlt, FaHome, FaUserCircle } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function AdminTopBar() {
@@ -9,18 +9,8 @@ export default function AdminTopBar() {
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
 
-    const [nickname, setNickname] = useState<string>('admin');
-    const [avatar, setAvatar] = useState<string | null>(null);
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
-
-    // Load từ localStorage
-    useEffect(() => {
-        const storedNick = localStorage.getItem('adminNickname');
-        const storedAvatar = localStorage.getItem('adminAvatar');
-        if (storedNick) setNickname(storedNick);
-        if (storedAvatar) setAvatar(storedAvatar);
-    }, []);
 
     // Đóng dropdown khi click ra ngoài
     useEffect(() => {
@@ -67,26 +57,25 @@ export default function AdminTopBar() {
                             onClick={() => setMenuOpen(o => !o)}
                             className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-700 hover:bg-green-800 text-white transition"
                         >
-                            {/* Avatar nhỏ */}
-                            <div className="w-8 h-8 rounded-full overflow-hidden bg-green-200 flex items-center justify-center text-green-800 text-sm font-bold shadow-inner">
-                                {avatar ? (
-                                    <img
-                                        src={avatar}
-                                        alt="avatar"
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = ''; }}
-                                    />
-                                ) : (
-                                    (nickname?.[0] || 'A').toUpperCase()
-                                )}
-                            </div>
+                            {/* Avatar */}
+                            {user.avatar ? (
+                                <img
+                                    src={`http://localhost:5000${user.avatar}`}
+                                    alt={user.name}
+                                    className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                                />
+                            ) : (
+                                <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-800 text-sm font-bold shadow-inner">
+                                    <FaUserCircle size={32} className="text-green-700" />
+                                </div>
+                            )}
                             <span className="text-sm font-semibold">
-                                Admin({nickname || 'admin'})
+                                {user.name}
                             </span>
                         </button>
 
                         {menuOpen && (
-                            <div className="absolute right-0 mt-2 w-44 bg-white dark:bg-[var(--card)] rounded-lg shadow-lg border border-gray-200 dark:border-[var(--border)] animate-fade">
+                            <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-[var(--card)] rounded-lg shadow-lg border border-gray-200 dark:border-[var(--border)] animate-fade z-50">
                                 <div className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-[var(--border)]">
                                     {user.email}
                                 </div>
@@ -95,7 +84,7 @@ export default function AdminTopBar() {
                                     onClick={() => setMenuOpen(false)}
                                     className="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[var(--border)] transition"
                                 >
-                                    Cài đặt
+                                    Thông tin tài khoản
                                 </Link>
                                 <button
                                     onClick={doLogout}

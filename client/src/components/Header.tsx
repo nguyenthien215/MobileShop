@@ -145,22 +145,26 @@ export default function Header() {
                                                 Trang Admin
                                             </Link>
                                         )}
-                                        <Link
-                                            to="/account-settings"
-                                            onClick={() => setUserMenuOpen(false)}
-                                            className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-[var(--border)] text-sm"
-                                            role="menuitem"
-                                        >
-                                            Thông tin tài khoản
-                                        </Link>
-                                        <Link
-                                            to="/orders"
-                                            onClick={() => setUserMenuOpen(false)}
-                                            className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-[var(--border)] text-sm"
-                                            role="menuitem"
-                                        >
-                                            Đơn hàng của tôi
-                                        </Link>
+                                        {user.role !== 'admin' && (
+                                            <>
+                                                <Link
+                                                    to="/account-settings"
+                                                    onClick={() => setUserMenuOpen(false)}
+                                                    className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-[var(--border)] text-sm"
+                                                    role="menuitem"
+                                                >
+                                                    Thông tin tài khoản
+                                                </Link>
+                                                <Link
+                                                    to="/orders"
+                                                    onClick={() => setUserMenuOpen(false)}
+                                                    className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-[var(--border)] text-sm"
+                                                    role="menuitem"
+                                                >
+                                                    Đơn hàng của tôi
+                                                </Link>
+                                            </>
+                                        )}
                                         <button
                                             onClick={handleLogout}
                                             className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-[var(--border)] text-red-600 text-sm"

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axiosInstance from '../../api/axiosConfig';
+import { useToast } from '../../contexts/ToastContext';
 
 interface User {
     id: string;
@@ -15,6 +16,7 @@ export default function Users() {
     const [editing, setEditing] = useState<User | null>(null);
     const [name, setName] = useState('');
     const [role, setRole] = useState<'admin' | 'user'>('user');
+    const { addToast } = useToast();
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -53,9 +55,27 @@ export default function Users() {
 
     const submitEdit = async () => {
         if (!editing) return;
-        await axiosInstance.put(`/admin/users/${editing.id}`, { name, role });
-        setEditing(null);
-        await load(currentPage);
+        try {
+            const oldRole = editing.role;
+            await axiosInstance.put(`/admin/users/${editing.id}`, { name, role });
+
+            // Hiển thị thông báo phù hợp
+            if (oldRole !== role) {
+                if (role === 'admin') {
+                    addToast('Đã cấp quyền admin thành công! User cần đăng nhập lại để truy cập trang admin.', { type: 'success' });
+                } else {
+                    addToast('Đã thu hồi quyền admin! User cần đăng nhập lại để cập nhật quyền.', { type: 'success' });
+                }
+            } else {
+                addToast('Cập nhật thông tin user thành công!', { type: 'success' });
+            }
+
+            setEditing(null);
+            await load(currentPage);
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            addToast(err.response?.data?.message || 'Cập nhật thất bại!', { type: 'error' });
+        }
     };
 
     const remove = async (id: string) => {
@@ -76,7 +96,7 @@ export default function Users() {
                 <div className="overflow-x-auto bg-white dark:bg-[var(--card)] rounded shadow">
                     <table className="min-w-full text-sm">
                         <thead>
-                            <tr className="bg-gray-100 dark:bg-gray-700 text-left">
+                            <tr className="bg-gray-100 dark:bg-gray-500 text-left">
                                 <th className="p-3">Tên</th>
                                 <th className="p-3">Email</th>
                                 <th className="p-3">Role</th>
@@ -123,8 +143,8 @@ export default function Users() {
                                 key={page}
                                 onClick={() => load(page)}
                                 className={`px-3 py-2 rounded ${currentPage === page
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500'
                                     }`}
                             >
                                 {page}
@@ -150,25 +170,71 @@ export default function Users() {
             )}
 
             {editing && (
-                <div className="bg-white dark:bg-[var(--card)] p-4 rounded shadow space-y-4">
-                    <h2 className="font-semibold">Sửa User</h2>
-                    <input
-                        value={name}
-                        onChange={e => setName(e.target.value)}
-                        className="px-3 py-2 border rounded w-full dark:bg-[var(--card)]"
-                        placeholder="Tên"
-                    />
-                    <select
-                        value={role}
-                        onChange={e => setRole(e.target.value as 'admin' | 'user')}
-                        className="px-3 py-2 border rounded w-full dark:bg-[var(--card)]"
-                    >
-                        <option value="user">user</option>
-                        <option value="admin">admin</option>
-                    </select>
-                    <div className="flex gap-3">
-                        <button onClick={submitEdit} className="px-4 py-2 bg-green-600 text-white rounded">Lưu</button>
-                        <button onClick={() => setEditing(null)} className="px-4 py-2 bg-gray-300 dark:bg-gray-600 rounded">Hủy</button>
+                <div className="bg-white dark:bg-[var(--card)] p-6 rounded-lg shadow-lg space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold">Sửa thông tin User</h2>
+                        <span className="text-sm text-gray-500">ID: {editing.id.slice(0, 8)}...</span>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div>
+                            <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Tên hiển thị</label>
+                            <input
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                className="px-3 py-2 border rounded w-full dark:bg-gray-200 dark:text-gray-900"
+                                placeholder="Nhập tên người dùng"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Email</label>
+                            <input
+                                value={editing.email}
+                                disabled
+                                className="px-3 py-2 border rounded w-full bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Phân quyền</label>
+                            <select
+                                value={role}
+                                onChange={e => setRole(e.target.value as 'admin' | 'user')}
+                                className="px-3 py-2 border rounded w-full dark:bg-gray-200 dark:text-gray-900"
+                            >
+                                <option value="user">👤 User - Người dùng thường</option>
+                                <option value="admin">⭐ Admin - Quản trị viên</option>
+                            </select>
+                        </div>
+
+                        {role !== editing.role && (
+                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3">
+                                <p className="text-sm text-yellow-800 dark:text-yellow-500 flex items-start gap-2">
+                                    <span className="text-lg">⚠️</span>
+                                    <span>
+                                        {role === 'admin'
+                                            ? 'Sau khi lưu, user này sẽ có quyền truy cập trang Admin. User cần đăng nhập lại để cập nhật quyền.'
+                                            : 'Sau khi lưu, user này sẽ bị thu hồi quyền Admin. User cần đăng nhập lại để cập nhật quyền.'}
+                                    </span>
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                        <button
+                            onClick={submitEdit}
+                            className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg transition"
+                        >
+                            💾 Lưu thay đổi
+                        </button>
+                        <button
+                            onClick={() => setEditing(null)}
+                            className="px-4 py-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 rounded-lg transition"
+                        >
+                            ✕ Hủy
+                        </button>
                     </div>
                 </div>
             )}

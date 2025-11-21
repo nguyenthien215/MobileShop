@@ -28,10 +28,12 @@ router.delete('/products/:id', jwt, isAdmin, adminController.deleteProduct);
 // Orders
 router.get('/orders', jwt, isAdmin, adminController.listOrders);
 router.put('/orders/:id/status', jwt, isAdmin, adminController.updateOrderStatus);
+router.delete('/orders/:id', jwt, isAdmin, adminController.deleteOrder);
 
 // Reviews
 router.get('/reviews', jwt, isAdmin, adminController.listReviews);
 router.delete('/reviews/:id', jwt, isAdmin, adminController.deleteReview);
+router.put('/reviews/:id/reply', jwt, isAdmin, adminController.replyReview);
 
 // Payments
 router.get('/payments', jwt, isAdmin, adminController.listPayments);

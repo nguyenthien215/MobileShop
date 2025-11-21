@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
     FaChartPie, FaUsers, FaBoxOpen, FaTags,
-    FaShoppingCart, FaStar, FaMoneyBill, FaCog
+    FaShoppingCart, FaStar, FaMoneyBill, FaUserCog
 } from 'react-icons/fa';
 
 const linkBase = 'flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-semibold transition';
@@ -44,7 +44,7 @@ export default function AdminSidebar() {
                 </NavLink>
                 <NavLink to="/admin/settings"
                     className={({ isActive }) => `${linkBase} ${isActive ? 'bg-green-600 text-white' : 'text-gray-700 dark:text-[var(--text)] hover:bg-green-100 dark:hover:bg-[var(--border)]'}`}>
-                    <FaCog /> Cài đặt
+                    <FaUserCog /> Thông tin tài khoản
                 </NavLink>
             </nav>
             <div className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-[var(--border)]">

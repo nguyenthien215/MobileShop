@@ -231,6 +231,7 @@ exports.listOrders = async (req, res) => {
 
         const result = await Order.findAndCountAll({
             include: [
+                { model: User, attributes: ['id', 'name', 'email'] },
                 { model: OrderItem, as: 'items', include: [Product] },
                 { model: Payment, as: 'payment' }
             ],
@@ -270,6 +271,24 @@ exports.updateOrderStatus = async (req, res) => {
     }
 };
 
+// Delete order
+exports.deleteOrder = async (req, res) => {
+    try {
+        const order = await Order.findByPk(req.params.id);
+        if (!order) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+        }
+
+        // Xóa order (OrderItems và Payments sẽ tự động xóa theo CASCADE)
+        await order.destroy();
+
+        res.json({ message: 'Đã xóa đơn hàng thành công' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Lỗi server' });
+    }
+};
+
 // REVIEWS
 exports.listReviews = async (req, res) => {
     try {
@@ -299,6 +318,29 @@ exports.deleteReview = async (req, res) => {
         await review.destroy();
         res.json({ message: 'Đã xóa review' });
     } catch (err) {
+        res.status(500).json({ message: 'Lỗi server' });
+    }
+};
+
+// Reply to review
+exports.replyReview = async (req, res) => {
+    try {
+        const { adminReply } = req.body;
+        const review = await Review.findByPk(req.params.id);
+
+        if (!review) {
+            return res.status(404).json({ message: 'Không tìm thấy review' });
+        }
+
+        review.adminReply = adminReply;
+        await review.save();
+
+        res.json({
+            message: 'Đã phản hồi đánh giá thành công',
+            review
+        });
+    } catch (err) {
+        console.error(err);
         res.status(500).json({ message: 'Lỗi server' });
     }
 };

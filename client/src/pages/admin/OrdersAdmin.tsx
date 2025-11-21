@@ -10,6 +10,8 @@ interface Order {
     status: string;
     payment?: { method: string; status: string; amount: number };
     paymentMethod: string;
+    shippingAddress?: string | { phone?: string; address?: string };
+    User?: { id: string; name: string; email: string };
     items: OrderItem[];
     createdAt: string;
 }
@@ -39,7 +41,19 @@ export default function OrdersAdmin() {
             console.log('[OrdersAdmin] Count:', result.count);
             console.log('[OrdersAdmin] Orders length:', orders.length);
 
-            setRows(orders);
+            // Parse shippingAddress if it's a string
+            const parsedOrders = orders.map((order: Order) => {
+                if (order.shippingAddress && typeof order.shippingAddress === 'string') {
+                    try {
+                        order.shippingAddress = JSON.parse(order.shippingAddress);
+                    } catch (e) {
+                        console.error('Failed to parse shippingAddress:', e);
+                    }
+                }
+                return order;
+            });
+
+            setRows(parsedOrders);
 
             // Set pagination info - use count from backend if available
             const total = typeof result.count === 'number' ? result.count : orders.length;
@@ -59,6 +73,23 @@ export default function OrdersAdmin() {
         await load(currentPage);
     };
 
+    const deleteOrder = async (id: number, orderNumber: string) => {
+        if (!confirm(`Bạn có chắc muốn xóa đơn hàng ${orderNumber}? Hành động này không thể hoàn tác.`)) return;
+        try {
+            await axiosInstance.delete(`/admin/orders/${id}`);
+            // If last item on page and not first page, go to previous page
+            if (rows.length === 1 && currentPage > 1) {
+                await load(currentPage - 1);
+            } else {
+                await load(currentPage);
+            }
+            alert('Đã xóa đơn hàng thành công!');
+        } catch (error) {
+            console.error('Error deleting order:', error);
+            alert('Không thể xóa đơn hàng');
+        }
+    };
+
     return (
         <div className="space-y-6">
             <h1 className="text-2xl font-bold">Quản lý đặt hàng</h1>
@@ -66,19 +97,43 @@ export default function OrdersAdmin() {
                 <div className="overflow-x-auto bg-white dark:bg-[var(--card)] rounded shadow">
                     <table className="min-w-full text-xs">
                         <thead>
-                            <tr className="bg-gray-100 dark:bg-gray-700">
+                            <tr className="bg-gray-100 dark:bg-gray-500">
                                 <th className="p-2">Mã đơn</th>
+                                <th className="p-2">Thông tin người đặt</th>
                                 <th className="p-2">Tổng</th>
                                 <th className="p-2">Thanh toán</th>
                                 <th className="p-2">Trạng thái</th>
                                 <th className="p-2">Sản phẩm</th>
                                 <th className="p-2">Ngày</th>
+                                <th className="p-2">Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
                             {rows.map(o => (
                                 <tr key={o.id} className="border-t dark:border-gray-600 align-top">
                                     <td className="p-2">{o.orderNumber}</td>
+                                    <td className="p-2">
+                                        <div className="space-y-1 min-w-[200px]">
+                                            {o.User?.name && (
+                                                <div>
+                                                    <span className="font-semibold">Tên:</span> {o.User.name}
+                                                </div>
+                                            )}
+                                            {typeof o.shippingAddress === 'object' && o.shippingAddress?.phone && (
+                                                <div>
+                                                    <span className="font-semibold">SĐT:</span> {o.shippingAddress.phone}
+                                                </div>
+                                            )}
+                                            {typeof o.shippingAddress === 'object' && o.shippingAddress?.address && (
+                                                <div>
+                                                    <span className="font-semibold">Địa chỉ:</span> {o.shippingAddress.address}
+                                                </div>
+                                            )}
+                                            {!o.User?.name && (!o.shippingAddress || typeof o.shippingAddress === 'string' || (!o.shippingAddress.phone && !o.shippingAddress.address)) && (
+                                                <span className="text-gray-400 italic">Chưa có thông tin</span>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="p-2">{o.totalAmount.toLocaleString('vi-VN')} đ</td>
                                     <td className="p-2 text-xs">
                                         {o.paymentMethod} {o.payment ? `(${o.payment.status})` : ''}
@@ -102,6 +157,14 @@ export default function OrdersAdmin() {
                                         </ul>
                                     </td>
                                     <td className="p-2">{new Date(o.createdAt).toLocaleString('vi-VN')}</td>
+                                    <td className="p-2">
+                                        <button
+                                            onClick={() => deleteOrder(o.id, o.orderNumber)}
+                                            className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
+                                        >
+                                            Xóa
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
