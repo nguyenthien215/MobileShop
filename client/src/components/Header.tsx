@@ -51,13 +51,21 @@ export default function Header() {
         navigate('/');
     };
 
+    // Xử lý click logo: scroll lên đầu trang
+    const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        navigate('/');
+    };
+
     return (
-        <header className="shadow-lg">
+        <header className="sticky top-0 z-50 shadow-lg backdrop-blur-sm bg-green-600/95 dark:bg-green-800/95">
             <div className="max-w-7xl mx-auto px-4 py-4">
                 <div className="flex items-center justify-between gap-4">
                     {/* Logo */}
                     <Link
                         to="/"
+                        onClick={handleLogoClick}
                         className="flex items-center gap-2 font-bold text-2xl text-white hover:text-gray-200 transition flex-shrink-0"
                     >
                         <div className="bg-white text-green-800 p-2 rounded-lg">
@@ -97,18 +105,20 @@ export default function Header() {
                             {theme === 'dark' ? <FaSun size={20} /> : <FaMoon size={20} />}
                         </button>
 
-                        {/* Cart */}
-                        <Link
-                            to="/cart"
-                            className="relative text-white hover:text-yellow-300 transition p-2 rounded-lg hover:bg-green-700"
-                        >
-                            <FaShoppingCart size={24} />
-                            {count > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-6 h-6 flex items-center justify-center font-bold px-1">
-                                    {count}
-                                </span>
-                            )}
-                        </Link>
+                        {/* Cart - Chỉ hiển thị cho user thường, ẩn với admin */}
+                        {user?.role !== 'admin' && (
+                            <Link
+                                to="/cart"
+                                className="relative text-white hover:text-yellow-300 transition p-2 rounded-lg hover:bg-green-700"
+                            >
+                                <FaShoppingCart size={24} />
+                                {count > 0 && (
+                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-6 h-6 flex items-center justify-center font-bold px-1">
+                                        {count}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
 
                         {/* User Dropdown (Click) */}
                         {user ? (

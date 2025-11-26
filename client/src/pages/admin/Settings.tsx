@@ -40,7 +40,7 @@ export default function Settings() {
             navigate('/login');
             return;
         }
-        
+
         const fetchProfile = async () => {
             try {
                 const response = await userApi.getProfile();
@@ -53,7 +53,7 @@ export default function Settings() {
                 addToast('Không thể tải thông tin tài khoản', { type: 'error' });
             }
         };
-        
+
         fetchProfile();
     }, [user, navigate, addToast]);
 
@@ -107,7 +107,7 @@ export default function Settings() {
             }
 
             addToast('Cập nhật thông tin tài khoản thành công!', { type: 'success' });
-            
+
             // Reload để cập nhật avatar và tên trên header
             window.location.reload();
         } catch (error) {

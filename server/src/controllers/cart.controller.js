@@ -23,6 +23,12 @@ exports.getCart = async (req, res) => {
 exports.add = async (req, res) => {
     const { productId, quantity = 1 } = req.body;
     if (!productId) return res.status(400).json({ message: 'Thiếu productId' });
+
+    // Chặn admin không được thêm vào giỏ hàng
+    if (req.user.role === 'admin') {
+        return res.status(403).json({ message: 'Tài khoản Admin không thể thêm sản phẩm vào giỏ hàng' });
+    }
+
     try {
         const existing = await CartItem.findOne({ where: { userId: req.user.id, productId } });
         if (existing) {

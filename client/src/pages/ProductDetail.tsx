@@ -119,6 +119,11 @@ export default function ProductDetail() {
             addToast('Bạn cần đăng nhập để mua sản phẩm.', { type: 'info' });
             return;
         }
+        // Chặn admin không được mua hàng
+        if (user.role === 'admin') {
+            addToast('Tài khoản Admin chỉ dùng để quản lý, không thể mua hàng.', { type: 'warning' });
+            return;
+        }
         if (product.stock > 0) {
             navigate(`/orders/create/${product.id}`);
         }
@@ -129,6 +134,11 @@ export default function ProductDetail() {
         if (!user) {
             setAuthWarning('Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.');
             addToast('Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.', { type: 'info' });
+            return;
+        }
+        // Chặn admin không được thêm vào giỏ hàng
+        if (user.role === 'admin') {
+            addToast('Tài khoản Admin chỉ dùng để quản lý, không thể thêm vào giỏ hàng.', { type: 'warning' });
             return;
         }
         if (product.stock === 0) {
@@ -148,6 +158,11 @@ export default function ProductDetail() {
         if (!product) return;
         if (!user) {
             addToast('Bạn cần đăng nhập để đánh giá.', { type: 'info' });
+            return;
+        }
+        // Chặn admin không được đánh giá
+        if (user.role === 'admin') {
+            addToast('Tài khoản Admin chỉ dùng để quản lý, không thể đánh giá sản phẩm.', { type: 'warning' });
             return;
         }
         if (!eligible) {
@@ -247,23 +262,32 @@ export default function ProductDetail() {
                         </span>
                     </div>
 
-                    <div className="flex gap-3 mt-4">
-                        <button
-                            className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold transition disabled:opacity-50"
-                            disabled={product.stock === 0}
-                            onClick={handleBuyNow}
-                        >
-                            {product.stock === 0 ? 'Hết hàng' : 'Mua ngay'}
-                        </button>
-                        <button
-                            onClick={handleAddCart}
-                            disabled={product.stock === 0}
-                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition disabled:opacity-50"
-                        >
-                            <FaShoppingCart />
-                            Thêm vào giỏ
-                        </button>
-                    </div>
+                    {/* Chỉ hiển thị nút mua hàng cho user thường, không hiển thị cho admin */}
+                    {user?.role === 'admin' ? (
+                        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <p className="text-sm text-blue-700 dark:text-blue-500">
+                                ℹ️ Tài khoản Admin chỉ dùng để quản lý sản phẩm. Vui lòng sử dụng tài khoản User để mua hàng.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="flex gap-3 mt-4">
+                            <button
+                                className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold transition disabled:opacity-50"
+                                disabled={product.stock === 0}
+                                onClick={handleBuyNow}
+                            >
+                                {product.stock === 0 ? 'Hết hàng' : 'Mua ngay'}
+                            </button>
+                            <button
+                                onClick={handleAddCart}
+                                disabled={product.stock === 0}
+                                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition disabled:opacity-50"
+                            >
+                                <FaShoppingCart />
+                                Thêm vào giỏ
+                            </button>
+                        </div>
+                    )}
 
                     {authWarning && !user && (
                         <div className="mt-2 text-sm text-red-600 flex flex-col gap-1">
@@ -290,13 +314,19 @@ export default function ProductDetail() {
                     </div>
                 )}
 
-                {user && !eligible && (
+                {user?.role === 'admin' && (
+                    <div className="text-sm text-blue-600 mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
+                        ℹ️ Tài khoản Admin không thể đánh giá sản phẩm.
+                    </div>
+                )}
+
+                {user && user.role !== 'admin' && !eligible && (
                     <div className="text-sm text-red-600 mb-4">
                         Bạn chỉ có thể đánh giá sau khi đã mua & thanh toán / hoàn tất đơn hàng của sản phẩm này.
                     </div>
                 )}
 
-                {user && eligible && (
+                {user && user.role !== 'admin' && eligible && (
                     <div className="mb-6 p-4 bg-white rounded shadow flex flex-col gap-3">
                         <div className="flex items-center gap-2">
                             {[1, 2, 3, 4, 5].map(star => (

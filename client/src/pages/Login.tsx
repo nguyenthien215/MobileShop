@@ -1,6 +1,7 @@
 // client/src/pages/Login.tsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+// gọi api đăng nhập
 import { authApi } from '../api/authApi';
 import { useAuthStore } from '../contexts/AuthContext';
 
@@ -23,6 +24,7 @@ export default function Login() {
             const res = await authApi.login(form);
             const { user, token } = res.data;
             setAuth(user, token);
+            // nếu tài khoản đó có cột role là admin thì vào trang admin
             if (user.role === 'admin') navigate('/admin/dashboard', { replace: true });
             else navigate('/', { replace: true });
         } catch (err: any) {

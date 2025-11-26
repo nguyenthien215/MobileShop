@@ -8,8 +8,11 @@ const Payment = require("../models/payment.model");
 // Quy tắc:
 // - Thanh toán ngân hàng: được đánh giá nếu payment.status === 'paid' (có thể vẫn cho nếu thiếu payment nhưng paymentMethod='bank')
 // - COD: chỉ khi order.status === 'completed'
+// 
+// FIX: Kiểm tra TẤT CẢ các đơn hàng có sản phẩm này, chỉ cần 1 đơn đủ điều kiện là cho phép đánh giá
 async function canReview(userId, productId) {
-    const orderItem = await OrderItem.findOne({
+    // Lấy TẤT CẢ OrderItem của sản phẩm này từ user
+    const orderItems = await OrderItem.findAll({
         where: { productId },
         include: [{
             model: Order,
@@ -17,17 +20,32 @@ async function canReview(userId, productId) {
             include: [{ model: Payment, as: 'payment', required: false }]
         }]
     });
-    if (!orderItem) return false;
-    const order = orderItem.Order;
-    if (!order) return false;
 
-    if (order.paymentMethod === 'bank') {
-        if (!order.payment) return true; // fallback đơn cũ chưa có payment
-        return order.payment.status === 'paid';
+    if (!orderItems || orderItems.length === 0) return false;
+
+    // Kiểm tra từng đơn hàng, chỉ cần 1 đơn đủ điều kiện là return true
+    for (const orderItem of orderItems) {
+        const order = orderItem.Order;
+        if (!order) continue;
+
+        // Trường hợp thanh toán ngân hàng
+        if (order.paymentMethod === 'bank') {
+            // Nếu có payment record và status = 'paid' → eligible
+            if (order.payment && order.payment.status === 'paid') {
+                return true;
+            }
+            // Fallback: đơn cũ chưa có payment record nhưng paymentMethod là bank → cho phép
+            if (!order.payment) {
+                return true;
+            }
+        }
+
+        // Trường hợp COD: chỉ khi đơn hàng completed
+        if (order.paymentMethod === 'COD' && order.status === 'completed') {
+            return true;
+        }
     }
-    if (order.paymentMethod === 'COD') {
-        return order.status === 'completed';
-    }
+
     return false;
 }
 
@@ -35,6 +53,11 @@ exports.addReview = async (req, res) => {
     try {
         const { productId, comment, rating } = req.body;
         const userId = req.user.id;
+
+        // Chặn admin không được đánh giá
+        if (req.user.role === 'admin') {
+            return res.status(403).json({ message: 'Tài khoản Admin không thể đánh giá sản phẩm' });
+        }
 
         if (!productId || !rating) return res.status(400).json({ message: "Thiếu productId hoặc rating" });
         if (rating < 1 || rating > 5) return res.status(400).json({ message: "Rating phải từ 1 đến 5" });
@@ -92,3 +115,4 @@ exports.getReviews = async (req, res) => {
         res.status(500).json({ message: "Lỗi server" });
     }
 };
+

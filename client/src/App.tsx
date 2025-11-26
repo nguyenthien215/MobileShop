@@ -21,8 +21,28 @@ import ReviewsAdmin from './pages/admin/ReviewsAdmin';
 import PaymentsAdmin from './pages/admin/PaymentsAdmin';
 import Settings from './pages/admin/Settings';
 import { RequireAuth, RequireAdmin } from './components/RequireAuth';
+import { useAuthStore } from './contexts/AuthContext';
+import { useIdleTimeout } from './hooks/useIdleTimeout';
 
 export default function App() {
+  const { user, logout } = useAuthStore();
+
+  /**
+   * Xử lý tự động đăng xuất khi user không hoạt động trong 30 phút
+   * Chỉ áp dụng khi user đã đăng nhập
+   */
+  const handleIdleTimeout = () => {
+    if (user) {
+      logout();
+      // Log thông báo để theo dõi (có thể thêm UI notification nếu cần)
+      console.log('Phiên đăng nhập đã hết hạn do không có hoạt động');
+    }
+  };
+
+  // Kích hoạt idle timeout - 30 phút = 1,800,000 milliseconds
+  // Để test nhanh có thể đổi thành: 30 * 1000 (30 giây) hoặc 1 * 60 * 1000 (1 phút)
+  useIdleTimeout(30 * 60 * 1000, handleIdleTimeout);
+
   return (
     <Router>
       <Routes>

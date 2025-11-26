@@ -52,8 +52,8 @@ export default function Products() {
 
     // form
     const [name, setName] = useState('');
-    const [price, setPrice] = useState<number>(0);
-    const [stock, setStock] = useState<number>(0);
+    const [price, setPrice] = useState<number | ''>('');
+    const [stock, setStock] = useState<number | ''>('');
     const [brand, setBrand] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [images, setImages] = useState<string[]>([]);
@@ -118,17 +118,17 @@ export default function Products() {
     };
 
     const resetForm = () => {
-        setName(''); setPrice(0); setStock(0); setBrand('');
+        setName(''); setPrice(''); setStock(''); setBrand('');
         setCategoryId(''); setImages([]); setEditing(null);
     };
 
     const submit = async () => {
-        if (!name || !price || !categoryId) return;
+        if (!name || !price || !categoryId) return alert('Vui lòng điền đầy đủ: Tên, Giá, Danh mục');
         const payload = {
             name,
             slug: makeSlug(name),
-            price,
-            stock,
+            price: Number(price),
+            stock: Number(stock) || 0,
             brand,
             categoryId,
             images
@@ -152,11 +152,12 @@ export default function Products() {
 
     const submitEdit = async () => {
         if (!editing) return;
+        if (!name || !price || !categoryId) return alert('Vui lòng điền đầy đủ: Tên, Giá, Danh mục');
         await axiosInstance.put(`/admin/products/${editing.id}`, {
             name,
             slug: makeSlug(name),
-            price,
-            stock,
+            price: Number(price),
+            stock: Number(stock) || 0,
             brand,
             categoryId,
             images
@@ -184,8 +185,20 @@ export default function Products() {
                 <h2 className="font-semibold">{editing ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                     <input value={name} onChange={e => setName(e.target.value)} placeholder="Tên sản phẩm" className="px-3 py-2 border rounded dark:bg-[var(--card)]" />
-                    <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))} placeholder="Giá" className="px-3 py-2 border rounded dark:bg-[var(--card)]" />
-                    <input type="number" value={stock} onChange={e => setStock(Number(e.target.value))} placeholder="Tồn kho" className="px-3 py-2 border rounded dark:bg-[var(--card)]" />
+                    <input
+                        type="number"
+                        value={price}
+                        onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="Giá (VNĐ)"
+                        className="px-3 py-2 border rounded dark:bg-[var(--card)]"
+                    />
+                    <input
+                        type="number"
+                        value={stock}
+                        onChange={e => setStock(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="Tồn kho (số lượng)"
+                        className="px-3 py-2 border rounded dark:bg-[var(--card)]"
+                    />
                     <input value={brand} onChange={e => setBrand(e.target.value)} placeholder="Thương hiệu" className="px-3 py-2 border rounded dark:bg-[var(--card)]" />
                     <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="px-3 py-2 border rounded dark:bg-[var(--card)]">
                         <option value="">--Chọn danh mục--</option>

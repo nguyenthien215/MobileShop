@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-
+// lưu tài khoản đã đăng nhập vào localstore
 interface User {
     id: string;
     name: string;

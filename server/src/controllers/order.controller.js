@@ -17,6 +17,11 @@ exports.createOrder = async (req, res) => {
     const { items, shippingAddress, paymentMethod } = req.body;
     const userId = req.user.id;
 
+    // Chặn admin không được tạo đơn hàng
+    if (req.user.role === 'admin') {
+        return res.status(403).json({ message: 'Tài khoản Admin không thể tạo đơn hàng' });
+    }
+
     if (!items || !items.length) return res.status(400).json({ message: 'Giỏ hàng rỗng' });
     if (!paymentMethod || !['COD', 'bank'].includes(paymentMethod)) {
         return res.status(400).json({ message: 'Phương thức thanh toán không hợp lệ' });
@@ -145,6 +150,11 @@ exports.quickOrder = async (req, res) => {
         cardHolderName,
         accountNumber
     } = req.body;
+
+    // Chặn admin không được tạo đơn hàng
+    if (req.user.role === 'admin') {
+        return res.status(403).json({ message: 'Tài khoản Admin không thể tạo đơn hàng' });
+    }
 
     if (!productId || !quantity || quantity < 1) {
         return res.status(400).json({ message: 'Dữ liệu không hợp lệ' });
