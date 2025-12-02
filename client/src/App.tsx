@@ -20,6 +20,9 @@ import OrdersAdmin from './pages/admin/OrdersAdmin';
 import ReviewsAdmin from './pages/admin/ReviewsAdmin';
 import PaymentsAdmin from './pages/admin/PaymentsAdmin';
 import Settings from './pages/admin/Settings';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailed from './pages/PaymentFailed';
+import PaymentDemo from './pages/PaymentDemo';
 import { RequireAuth, RequireAdmin } from './components/RequireAuth';
 import { useAuthStore } from './contexts/AuthContext';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
@@ -49,6 +52,7 @@ export default function App() {
         {/* Public */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/payment-demo" element={<PaymentDemo />} />
 
         {/* Main Layout Routes */}
         <Route element={<MainLayout />}>
@@ -60,6 +64,8 @@ export default function App() {
           <Route path="/orders" element={<OrderHistory />} />
           <Route path="/orders/create/:productId" element={<Orders />} />
           <Route path="/orders/checkout" element={<OrdersMulti />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-failed" element={<PaymentFailed />} />
           <Route path="/account-settings" element={<RequireAuth><AccountSettings /></RequireAuth>} />
         </Route>
 

@@ -352,7 +352,15 @@ exports.listPayments = async (req, res) => {
         const offset = (page - 1) * limit;
 
         const result = await Payment.findAndCountAll({
-            include: [{ model: Order, attributes: ['id', 'orderNumber', 'paymentMethod', 'status'] }],
+            include: [{
+                model: Order,
+                attributes: ['id', 'orderNumber', 'paymentMethod', 'status'],
+                where: {
+                    status: {
+                        [require('sequelize').Op.ne]: 'cancelled' // Ẩn payment của đơn hàng đã hủy
+                    }
+                }
+            }],
             order: [['createdAt', 'DESC']],
             offset: parseInt(offset),
             limit: parseInt(limit)

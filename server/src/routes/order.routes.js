@@ -20,6 +20,9 @@ router.post('/', jwt, orderController.createOrder);
 // Lấy đơn hàng của user
 router.get('/my-orders', jwt, orderController.getMyOrders);
 
+// Hủy đơn hàng
+router.put('/:id/cancel', jwt, orderController.cancelOrder);
+
 // Admin xem tất cả đơn hàng
 router.get('/admin', jwt, isAdmin, orderController.getAllOrders);
 

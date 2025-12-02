@@ -22,6 +22,20 @@ export default function OrderHistory() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const handleCancelOrder = async (orderId: number) => {
+        if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
+
+        try {
+            await axiosInstance.put(`/orders/${orderId}/cancel`);
+            // Reload orders
+            const res = await axiosInstance.get('/orders/my-orders');
+            setOrders(res.data);
+            alert('Đã hủy đơn hàng thành công');
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'Lỗi khi hủy đơn hàng');
+        }
+    };
+
     useEffect(() => {
         const load = async () => {
             try {
@@ -62,19 +76,45 @@ export default function OrderHistory() {
                                         Thanh toán: {o.paymentMethod} {o.payment ? `(${o.payment.status})` : ''}
                                     </p>
                                     <p className="text-xs">
-                                        Trạng thái: <span className="font-medium">{o.status}</span>
+                                        Trạng thái: <span className={`font-medium ${o.status === 'cancelled' ? 'text-red-500' :
+                                                o.status === 'completed' ? 'text-green-600' : 'text-gray-700'
+                                            }`}>
+                                            {o.status === 'cancelled' ? 'Đã hủy đơn hàng' : o.status}
+                                        </span>
                                     </p>
+
+                                    {/* Buttons */}
+                                    <div className="flex gap-2 mt-2">
+                                        {o.status === 'pending' && (
+                                            <button
+                                                onClick={() => handleCancelOrder(o.id)}
+                                                className="px-3 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded"
+                                            >
+                                                Hủy đơn hàng
+                                            </button>
+                                        )}
+                                        {o.status === 'cancelled' && o.items.length > 0 && o.items[0].Product?.id && (
+                                            <Link
+                                                to={`/products/${o.items[0].Product.id}`}
+                                                className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded"
+                                            >
+                                                Mua lại
+                                            </Link>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                             <ul className="mt-4 text-sm list-disc list-inside space-y-1">
                                 {o.items.map(it => {
                                     const canReview = (
-                                        // Ngân hàng đã trả: có payment.status = paid
-                                        (o.paymentMethod === 'bank' && o.payment?.status === 'paid') ||
-                                        // Ngân hàng cũ fallback chưa có payment vẫn cho
-                                        (o.paymentMethod === 'bank' && !o.payment) ||
-                                        // COD chỉ khi hoàn tất
-                                        (o.paymentMethod === 'COD' && o.status === 'completed')
+                                        o.status !== 'cancelled' && ( // Không cho đánh giá đơn hàng đã hủy
+                                            // Ngân hàng đã trả: có payment.status = paid
+                                            (o.paymentMethod === 'bank' && o.payment?.status === 'paid') ||
+                                            // Ngân hàng cũ fallback chưa có payment vẫn cho
+                                            (o.paymentMethod === 'bank' && !o.payment) ||
+                                            // COD chỉ khi hoàn tất
+                                            (o.paymentMethod === 'COD' && o.status === 'completed')
+                                        )
                                     );
                                     return (
                                         <li key={it.id} className="flex items-center justify-between gap-2">

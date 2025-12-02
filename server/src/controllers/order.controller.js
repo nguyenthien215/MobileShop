@@ -106,6 +106,11 @@ exports.getMyOrders = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
     try {
         const orders = await Order.findAll({
+            where: {
+                status: {
+                    [require('sequelize').Op.ne]: 'cancelled' // Ẩn đơn hàng đã hủy
+                }
+            },
             include: [{ model: OrderItem, as: 'items', include: [Product] }],
             order: [['createdAt', 'DESC']],
         });
@@ -190,11 +195,12 @@ exports.quickOrder = async (req, res) => {
             total: totalAmount
         }, { transaction: t });
 
-        const paymentStatus = paymentMethod === 'bank' ? 'paid' : 'unpaid';
+        // Thanh toán online (bank) sẽ có status 'pending', chờ callback từ PayOS
+        const paymentStatus = paymentMethod === 'bank' ? 'pending' : 'unpaid';
 
         await Payment.create({
             orderId: order.id,
-            method: paymentMethod,
+            method: paymentMethod === 'bank' ? 'payos' : paymentMethod,
             amount: totalAmount,
             status: paymentStatus
         }, { transaction: t });
@@ -212,5 +218,55 @@ exports.quickOrder = async (req, res) => {
     } catch (err) {
         await t.rollback();
         res.status(500).json({ message: err.message });
+    }
+};
+
+// PUT /api/orders/:id/cancel - Hủy đơn hàng
+exports.cancelOrder = async (req, res) => {
+    try {
+        const orderId = req.params.id;
+        const userId = req.user.id;
+
+        const order = await Order.findOne({
+            where: { id: orderId, userId },
+            include: [{ model: Payment, as: 'payment' }]
+        });
+
+        if (!order) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+        }
+
+        // Chỉ cho phép hủy đơn hàng có status là 'pending'
+        if (order.status !== 'pending') {
+            return res.status(400).json({
+                message: 'Chỉ có thể hủy đơn hàng đang chờ xử lý'
+            });
+        }
+
+        const t = await sequelize.transaction();
+        try {
+            // Cập nhật status đơn hàng thành 'cancelled'
+            await Order.update(
+                { status: 'cancelled' },
+                { where: { id: orderId }, transaction: t }
+            );
+
+            // Nếu có payment, cập nhật status thành 'cancelled'
+            if (order.payment) {
+                await Payment.update(
+                    { status: 'cancelled' },
+                    { where: { orderId }, transaction: t }
+                );
+            }
+
+            await t.commit();
+            res.json({ success: true, message: 'Đã hủy đơn hàng thành công' });
+        } catch (error) {
+            await t.rollback();
+            throw error;
+        }
+    } catch (error) {
+        console.error('Cancel order error:', error);
+        res.status(500).json({ message: 'Lỗi khi hủy đơn hàng' });
     }
 };

@@ -14,7 +14,8 @@ const uploadRoutes = require('./src/routes/upload.routes');
 const orderRoutes = require("./src/routes/order.routes");
 const cartRoutes = require('./src/routes/cart.routes');
 const userRoutes = require('./src/routes/user.routes');
-
+const vnpayRoutes = require('./src/routes/vnpay.routes');
+const payosRoutes = require('./src/routes/payos.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -45,6 +46,7 @@ app.use("/api/reviews", reviewRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.use('/api/vnpay', vnpayRoutes);
 
 // Upload routes
 app.use('/api/upload', uploadRoutes);
@@ -55,6 +57,8 @@ app.use('/api/cart', cartRoutes);
 app.use("/api/orders", orderRoutes);
 
 app.use('/api/user', userRoutes);
+
+app.use('/api/payos', payosRoutes);
 
 sequelize
   .authenticate()
