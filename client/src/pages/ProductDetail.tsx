@@ -5,6 +5,7 @@ import { FaShoppingCart } from 'react-icons/fa';
 import { useCart } from '../contexts/CartContext';
 import { useAuthStore } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import Gift from '../assets/img/gift.gif'
 
 interface Product {
     id: string;
@@ -392,6 +393,17 @@ export default function ProductDetail() {
                         ))}
                     </ul>
                 )}
+            </div>
+
+            {/* Gift Box Animation - Bottom Right Corner */}
+            <div className="fixed bottom-4 right-4 z-40">
+                <div className="w-16 h-16 hover:scale-110 transition-transform duration-300 cursor-pointer" title="Quà tặng">
+                    <img
+                        src={Gift}
+                        alt="Hộp quà"
+                        className="w-full h-full object-contain drop-shadow-lg"
+                    />
+                </div>
             </div>
         </div>
     );

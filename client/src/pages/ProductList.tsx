@@ -6,6 +6,7 @@ import { FaStar } from 'react-icons/fa';
 interface Product {
     id: string;
     name: string;
+    description?: string;
     price: number;
     images: string[] | string;
     stock: number;
@@ -165,6 +166,11 @@ export default function ProductList() {
                                     <h3 className="font-semibold text-gray-800 line-clamp-2 group-hover:text-blue-600 transition">
                                         {p.name}
                                     </h3>
+                                    {p.description && (
+                                        <p className="text-sm text-gray-600 line-clamp-1">
+                                            {p.description}
+                                        </p>
+                                    )}
                                     <div className="flex items-center gap-1">
                                         {Array.from({ length: 5 }).map((_, i) => (
                                             <FaStar key={i} className={i < 4 ? 'text-yellow-400' : 'text-gray-300'} />

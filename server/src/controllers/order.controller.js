@@ -23,7 +23,7 @@ exports.createOrder = async (req, res) => {
     }
 
     if (!items || !items.length) return res.status(400).json({ message: 'Giỏ hàng rỗng' });
-    if (!paymentMethod || !['COD', 'bank'].includes(paymentMethod)) {
+    if (!paymentMethod || !['COD', 'payos'].includes(paymentMethod)) {
         return res.status(400).json({ message: 'Phương thức thanh toán không hợp lệ' });
     }
 
@@ -59,7 +59,7 @@ exports.createOrder = async (req, res) => {
         }
 
         // Tạo payment (giống quickOrder)
-        const paymentStatus = paymentMethod === 'bank' ? 'paid' : 'unpaid';
+        const paymentStatus = paymentMethod === 'payos' ? 'pending' : 'unpaid';
         await Payment.create({
             orderId: order.id,
             method: paymentMethod,
@@ -164,7 +164,7 @@ exports.quickOrder = async (req, res) => {
     if (!productId || !quantity || quantity < 1) {
         return res.status(400).json({ message: 'Dữ liệu không hợp lệ' });
     }
-    if (!paymentMethod || !['COD', 'bank'].includes(paymentMethod)) {
+    if (!paymentMethod || !['COD', 'payos'].includes(paymentMethod)) {
         return res.status(400).json({ message: 'Phương thức thanh toán không hợp lệ' });
     }
 
@@ -195,12 +195,12 @@ exports.quickOrder = async (req, res) => {
             total: totalAmount
         }, { transaction: t });
 
-        // Thanh toán online (bank) sẽ có status 'pending', chờ callback từ PayOS
-        const paymentStatus = paymentMethod === 'bank' ? 'pending' : 'unpaid';
+        // Thanh toán online (payos) sẽ có status 'pending', chờ callback từ PayOS
+        const paymentStatus = paymentMethod === 'payos' ? 'pending' : 'unpaid';
 
         await Payment.create({
             orderId: order.id,
-            method: paymentMethod === 'bank' ? 'payos' : paymentMethod,
+            method: paymentMethod,
             amount: totalAmount,
             status: paymentStatus
         }, { transaction: t });

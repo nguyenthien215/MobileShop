@@ -7,6 +7,7 @@ interface Product {
     id: string;
     name: string;
     slug: string;
+    description?: string;
     price: number;
     stock: number;
     brand?: string;
@@ -55,6 +56,7 @@ export default function Products() {
     const [price, setPrice] = useState<number | ''>('');
     const [stock, setStock] = useState<number | ''>('');
     const [brand, setBrand] = useState('');
+    const [description, setDescription] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [images, setImages] = useState<string[]>([]);
 
@@ -118,7 +120,7 @@ export default function Products() {
     };
 
     const resetForm = () => {
-        setName(''); setPrice(''); setStock(''); setBrand('');
+        setName(''); setPrice(''); setStock(''); setBrand(''); setDescription('');
         setCategoryId(''); setImages([]); setEditing(null);
     };
 
@@ -127,6 +129,7 @@ export default function Products() {
         const payload = {
             name,
             slug: makeSlug(name),
+            description,
             price: Number(price),
             stock: Number(stock) || 0,
             brand,
@@ -146,6 +149,7 @@ export default function Products() {
         setPrice(p.price);
         setStock(p.stock);
         setBrand(p.brand || '');
+        setDescription(p.description || '');
         setCategoryId(p.categoryId);
         setImages(normalizeImages(p.images));
     };
@@ -156,6 +160,7 @@ export default function Products() {
         await axiosInstance.put(`/admin/products/${editing.id}`, {
             name,
             slug: makeSlug(name),
+            description,
             price: Number(price),
             stock: Number(stock) || 0,
             brand,
@@ -204,6 +209,13 @@ export default function Products() {
                         <option value="">--Chọn danh mục--</option>
                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
+                    <textarea
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                        placeholder="Mô tả sản phẩm"
+                        rows={3}
+                        className="px-3 py-2 border rounded dark:bg-[var(--card)] resize-none"
+                    />
                 </div>
 
                 {/* Upload Images Section */}

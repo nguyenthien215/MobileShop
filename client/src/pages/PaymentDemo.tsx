@@ -9,6 +9,7 @@ export default function PaymentDemo() {
     const [processing, setProcessing] = useState(false);
 
     const orderCode = searchParams.get('orderCode');
+    const orderId = searchParams.get('orderId');
     const amount = searchParams.get('amount');
     const description = searchParams.get('description');
 
@@ -34,7 +35,8 @@ export default function PaymentDemo() {
             });
 
             if (status === 'success') {
-                navigate('/orders?payment=success');
+                // Redirect đến trang success với orderId
+                navigate(`/payment-success?orderId=${orderId}`);
             } else {
                 navigate('/orders?payment=failed');
             }

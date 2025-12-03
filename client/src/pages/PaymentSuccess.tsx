@@ -1,36 +1,79 @@
 import { useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { FaCheckCircle } from 'react-icons/fa';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 
 export default function PaymentSuccess() {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const orderId = searchParams.get('orderId');
 
     useEffect(() => {
         // Clear cart sau khi thanh toán thành công
-        // Hoặc gọi API clear cart
+        localStorage.removeItem('cart');
     }, []);
 
     return (
-        <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-            <FaCheckCircle className="text-green-500 text-6xl mx-auto mb-6" />
-            <h1 className="text-3xl font-bold mb-4">Thanh toán thành công!</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-8">
-                Đơn hàng <span className="font-semibold">#{orderId}</span> đã được thanh toán.
-            </p>
-            <div className="flex gap-4 justify-center">
-                <Link
-                    to="/orders"
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                    Xem đơn hàng
-                </Link>
-                <Link
-                    to="/"
-                    className="px-6 py-3 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
-                >
-                    Về trang chủ
-                </Link>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4">
+            <div className="w-full max-w-md text-center">
+                {/* Success Icon */}
+                <div className="mb-8 flex justify-center">
+                    <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
+                        <svg
+                            className="w-14 h-14 text-white"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                            />
+                        </svg>
+                    </div>
+                </div>
+
+                {/* Title */}
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">
+                    Thanh toán thành công!
+                </h1>
+
+                {/* Description */}
+                <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
+                    Đơn hàng của bạn đã được tạo thành công.
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mb-8">
+                    Cảm ơn bạn đã mua hàng tại Mobile City
+                </p>
+
+                {/* Order ID */}
+                {orderId && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-8">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Mã đơn hàng</p>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                            #{orderId}
+                        </p>
+                    </div>
+                )}
+
+                {/* Buttons */}
+                <div className="space-y-3">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="w-full py-4 px-6 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition duration-200 transform hover:scale-105"
+                    >
+                        Về trang chủ
+                    </button>
+                    <button
+                        onClick={() => navigate('/orders')}
+                        className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 transform hover:scale-105"
+                    >
+                        Xem đơn hàng của tôi
+                    </button>
+                </div>
+
+                {/* Info */}
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-6">
+                    Email xác nhận đã được gửi đến hộp thư của bạn
+                </p>
             </div>
         </div>
     );

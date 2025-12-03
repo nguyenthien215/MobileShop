@@ -1,6 +1,7 @@
 const payos = require('../../config/payos.config');
 const Order = require('../models/order.model');
 const Payment = require('../models/payment.model');
+const emailService = require('../utils/email.service');
 
 /**
  * Tạo link thanh toán PayOS (giả lập cho test)
@@ -96,6 +97,41 @@ exports.handleDemoCallback = async (req, res) => {
         if (status === 'success') {
             await payment.update({ status: 'paid' });
             console.log('[PayOS Demo] Payment marked as paid:', orderCode);
+
+            // Lấy đơn hàng để gửi email
+            const order = await Order.findByPk(payment.orderId, {
+                include: [
+                    { association: 'items', include: ['Product'] },
+                    'User'
+                ]
+            });
+
+            if (order && order.User) {
+                // Gửi email xác nhận thanh toán
+                await emailService.sendPaymentConfirmation(order.User.email, {
+                    orderNumber: order.id,
+                    amount: payment.amount,
+                    paymentMethod: payment.method,
+                    transactionId: payment.transactionId
+                });
+
+                // Gửi email xác nhận đơn hàng (với chi tiết sản phẩm)
+                const itemsData = order.items.map(item => ({
+                    ...item.dataValues,
+                    total: item.quantity * item.unitPrice
+                }));
+
+                await emailService.sendOrderConfirmation(order.User.email, {
+                    orderNumber: order.id,
+                    items: itemsData,
+                    totalAmount: payment.amount,
+                    shippingAddress: {
+                        phone: order.User.phoneNumber,
+                        address: order.shippingAddress
+                    }
+                });
+            }
+
         } else {
             await payment.update({ status: 'failed' });
             console.log('[PayOS Demo] Payment marked as failed:', orderCode);

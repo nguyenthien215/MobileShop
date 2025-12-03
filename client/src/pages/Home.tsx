@@ -10,6 +10,7 @@ interface Product {
     id: string;
     name: string;
     slug: string;
+    description?: string;
     price: number;
     images: string[];
     rating?: number;
@@ -263,6 +264,11 @@ export default function Home() {
                                     >
                                         {p.name}
                                     </Link>
+                                    {p.description && (
+                                        <p className="text-sm text-gray-600 line-clamp-1">
+                                            {p.description}
+                                        </p>
+                                    )}
                                     <div className="flex items-center gap-1">
                                         {Array.from({ length: 5 }).map((_, i) => (
                                             <FaStar key={i} className={i < (p.rating || 4) ? 'text-yellow-400' : 'text-gray-300'} />

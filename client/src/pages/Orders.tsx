@@ -38,7 +38,7 @@ export default function Orders() {
     const [quantity, setQuantity] = useState(1);
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState<'COD' | 'bank'>('COD');
+    const [paymentMethod, setPaymentMethod] = useState<'COD' | 'payos'>('COD');
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -91,7 +91,7 @@ export default function Orders() {
 
             if (res.data.success) {
                 // Nếu thanh toán online, redirect sang PayOS
-                if (paymentMethod === 'bank' && res.data.order) {
+                if (paymentMethod === 'payos' && res.data.order) {
                     const orderId = res.data.order.id;
                     const amount = product.price * quantity;
                     const orderInfo = `Thanh toán đơn hàng ${product.name}`;
@@ -222,15 +222,15 @@ export default function Orders() {
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="radio"
-                                    checked={paymentMethod === 'bank'}
-                                    onChange={() => setPaymentMethod('bank')}
+                                    checked={paymentMethod === 'payos'}
+                                    onChange={() => setPaymentMethod('payos')}
                                 />
                                 <span>Thanh toán Online (PayOS)</span>
                             </label>
                         </div>
                     </div>
 
-                    {paymentMethod === 'bank' && (
+                    {paymentMethod === 'payos' && (
                         <div className="border rounded p-4 bg-blue-50 flex flex-col gap-2">
                             <p className="text-sm text-gray-700">
                                 💳 Bạn sẽ được chuyển đến trang thanh toán PayOS để hoàn tất giao dịch.

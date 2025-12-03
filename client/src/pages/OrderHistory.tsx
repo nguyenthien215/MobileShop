@@ -77,7 +77,7 @@ export default function OrderHistory() {
                                     </p>
                                     <p className="text-xs">
                                         Trạng thái: <span className={`font-medium ${o.status === 'cancelled' ? 'text-red-500' :
-                                                o.status === 'completed' ? 'text-green-600' : 'text-gray-700'
+                                            o.status === 'completed' ? 'text-green-600' : 'text-gray-700'
                                             }`}>
                                             {o.status === 'cancelled' ? 'Đã hủy đơn hàng' : o.status}
                                         </span>
@@ -108,10 +108,8 @@ export default function OrderHistory() {
                                 {o.items.map(it => {
                                     const canReview = (
                                         o.status !== 'cancelled' && ( // Không cho đánh giá đơn hàng đã hủy
-                                            // Ngân hàng đã trả: có payment.status = paid
-                                            (o.paymentMethod === 'bank' && o.payment?.status === 'paid') ||
-                                            // Ngân hàng cũ fallback chưa có payment vẫn cho
-                                            (o.paymentMethod === 'bank' && !o.payment) ||
+                                            // PayOS đã thanh toán: status = paid
+                                            (o.paymentMethod === 'payos' && o.payment?.status === 'paid') ||
                                             // COD chỉ khi hoàn tất
                                             (o.paymentMethod === 'COD' && o.status === 'completed')
                                         )

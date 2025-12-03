@@ -36,10 +36,7 @@ export default function OrdersMulti() {
 
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState<'COD' | 'bank'>('COD');
-    const [bankName, setBankName] = useState('');
-    const [cardHolderName, setCardHolderName] = useState(user?.name || '');
-    const [accountNumber, setAccountNumber] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState<'COD' | 'payos'>('COD');
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
@@ -60,9 +57,6 @@ export default function OrdersMulti() {
 
     const handleSubmit = async () => {
         if (!phone || !address) { setErrorMsg('Nhập đủ số điện thoại & địa chỉ'); return; }
-        if (paymentMethod === 'bank' && (!bankName || !cardHolderName || !accountNumber)) {
-            setErrorMsg('Thiếu thông tin ngân hàng'); return;
-        }
         setErrorMsg('');
         setSubmitting(true);
         try {
@@ -70,13 +64,38 @@ export default function OrdersMulti() {
                 productId: it.Product.id,
                 quantity: it.quantity
             }));
-            alert('Thanh toán thành công!');
+
             const res = await axiosInstance.post('/orders', {
                 items: itemsPayload,
                 paymentMethod,
                 shippingAddress: { phone, address }
             });
+
             if (res.status === 201) {
+                // Nếu thanh toán online (PayOS), redirect sang PayOS
+                if (paymentMethod === 'payos' && res.data.id) {
+                    const orderId = res.data.id;
+                    const orderInfo = `Thanh toán đơn hàng ${selectedItems.length} sản phẩm`;
+
+                    try {
+                        const payosRes = await axiosInstance.post('/payos/create-payment-link', {
+                            orderId,
+                            amount: total,
+                            orderInfo
+                        });
+
+                        if (payosRes.data.checkoutUrl) {
+                            window.location.href = payosRes.data.checkoutUrl;
+                            return;
+                        }
+                    } catch (payosErr: any) {
+                        setErrorMsg('Lỗi khi tạo link thanh toán: ' + (payosErr.response?.data?.message || 'Vui lòng thử lại'));
+                        setSubmitting(false);
+                        return;
+                    }
+                }
+
+                // Nếu COD, hiển thị success dialog
                 setSuccess(true);
                 clearSelection();
                 await refresh();
@@ -150,41 +169,12 @@ export default function OrdersMulti() {
                 <div>
                     <h3 className="text-sm font-semibold mb-2">Phương thức thanh toán</h3>
                     <label className="flex items-center gap-2 mb-1">
-                        <input type="radio" checked={paymentMethod === 'COD'} onChange={() => setPaymentMethod('COD')} /> COD
+                        <input type="radio" checked={paymentMethod === 'COD'} onChange={() => setPaymentMethod('COD')} /> COD (Thanh toán khi nhận hàng)
                     </label>
                     <label className="flex items-center gap-2">
-                        <input type="radio" checked={paymentMethod === 'bank'} onChange={() => setPaymentMethod('bank')} /> Ngân hàng
+                        <input type="radio" checked={paymentMethod === 'payos'} onChange={() => setPaymentMethod('payos')} /> Thanh toán Online (PayOS)
                     </label>
                 </div>
-                {paymentMethod === 'bank' && (
-                    <div className="grid gap-3">
-                        <select
-                            value={bankName}
-                            onChange={e => setBankName(e.target.value)}
-                            className="px-3 py-2 border rounded"
-                        >
-                            <option value="">--Chọn ngân hàng--</option>
-                            <option value="Vietcombank">Vietcombank</option>
-                            <option value="Techcombank">Techcombank</option>
-                            <option value="ACB">ACB</option>
-                            <option value="MB">MB Bank</option>
-                        </select>
-                        <input
-                            type="text"
-                            value={cardHolderName}
-                            onChange={e => setCardHolderName(e.target.value)}
-                            className="px-3 py-2 border rounded"
-                            placeholder="Tên chủ thẻ"
-                        />
-                        <input
-                            type="text"
-                            value={accountNumber}
-                            onChange={e => setAccountNumber(e.target.value)}
-                            className="px-3 py-2 border rounded"
-                            placeholder="Số tài khoản"
-                        />
-                    </div>
-                )}
                 <div className="flex justify-between font-semibold text-lg">
                     <span>Tổng thanh toán:</span>
                     <span className="text-green-700">{total.toLocaleString('vi-VN')} đ</span>

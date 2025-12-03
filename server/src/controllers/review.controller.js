@@ -6,6 +6,7 @@ const OrderItem = require("../models/orderItem.model");
 const Payment = require("../models/payment.model");
 
 // Quy tắc:
+// - Thanh toán PayOS: được đánh giá nếu payment.status === 'paid'
 // - Thanh toán ngân hàng: được đánh giá nếu payment.status === 'paid' (có thể vẫn cho nếu thiếu payment nhưng paymentMethod='bank')
 // - COD: chỉ khi order.status === 'completed'
 // 
@@ -27,6 +28,14 @@ async function canReview(userId, productId) {
     for (const orderItem of orderItems) {
         const order = orderItem.Order;
         if (!order) continue;
+
+        // Trường hợp thanh toán PayOS
+        if (order.paymentMethod === 'payos') {
+            // Nếu có payment record và status = 'paid' → eligible
+            if (order.payment && order.payment.status === 'paid') {
+                return true;
+            }
+        }
 
         // Trường hợp thanh toán ngân hàng
         if (order.paymentMethod === 'bank') {
